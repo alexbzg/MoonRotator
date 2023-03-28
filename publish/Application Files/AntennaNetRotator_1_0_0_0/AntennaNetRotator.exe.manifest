@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<asmv1:assembly manifestVersion="1.0" xsi:schemaLocation="urn:schemas-microsoft-com:asm.v1 assembly.adaptive.xsd" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:co.v2="urn:schemas-microsoft-com:clickonce.v2" xmlns="urn:schemas-microsoft-com:asm.v2" xmlns:asmv1="urn:schemas-microsoft-com:asm.v1" xmlns:asmv2="urn:schemas-microsoft-com:asm.v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:co.v1="urn:schemas-microsoft-com:clickonce.v1">
+  <asmv1:assemblyIdentity version="1.0.0.0" name="AntennaNetRotator.exe" publicKeyToken="c108627a09c3ea56" language="neutral" processorArchitecture="x86" type="win32" />
+  <description asmv2:iconFile="icon_ant1.ico" xmlns="urn:schemas-microsoft-com:asm.v1" />
+  <application />
+  <entryPoint>
+    <assemblyIdentity name="AntennaNetRotator" version="1.0.0.1" language="neutral" processorArchitecture="x86" />
+    <commandLine file="AntennaNetRotator.exe" parameters="" />
+  </entryPoint>
+  <trustInfo>
+    <security>
+      <applicationRequestMinimum>
+        <PermissionSet version="1" class="System.Security.NamedPermissionSet" Name="LocalIntranet" Description="Default rights given to applications on the local intranet" Unrestricted="true" ID="Custom" SameSite="site" />
+        <defaultAssemblyRequest permissionSetReference="Custom" />
+      </applicationRequestMinimum>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!-- Параметры манифеста UAC
+          При необходимости изменить уровень управления учетными записями Windows замените 
+          узел requestedExecutionLevel одним из следующих значений.
+
+        <requestedExecutionLevel  level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel  level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel  level="highestAvailable" uiAccess="false" />
+
+            Задание узла requestedExecutionLevel отключит виртуализацию файла и реестра.
+            Если виртуализацию файла и реестра нужно использовать для обратной 
+            совместимости, удалите узел requestedExecutionLevel.
+        -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentOS>
+      <osVersionInfo>
+        <os majorVersion="5" minorVersion="1" buildNumber="2600" servicePackMajor="0" />
+      </osVersionInfo>
+    </dependentOS>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="preRequisite" allowDelayedBinding="true">
+      <assemblyIdentity name="Microsoft.Windows.CommonLanguageRuntime" version="4.0.30319.0" />
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="AntennaNetRotator.exe" size="3516416">
+      <assemblyIdentity name="AntennaNetRotator" version="1.0.0.1" language="neutral" processorArchitecture="x86" />
+      <hash>
+        <dsig:Transforms>
+          <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+        </dsig:Transforms>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+        <dsig:DigestValue>/DtmFfM7Yzr0hVhRILa/h98VZvc=</dsig:DigestValue>
+      </hash>
+    </dependentAssembly>
+  </dependency>
+  <file name="icon_ant1.ico" size="370070">
+    <hash>
+      <dsig:Transforms>
+        <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
+      </dsig:Transforms>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+      <dsig:DigestValue>T9pHxzMy3UYWYvNmiftCgZXALZQ=</dsig:DigestValue>
+    </hash>
+  </file>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Список всех версий Windows, с которыми это приложение предназначено работать. Windows автоматически выберет наиболее совместимую среду.-->
+      <!-- Если приложение предназначено для работы с Windows 7, раскомментируйте следующий узел supportedOS-->
+      <!--<supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>-->
+    </application>
+  </compatibility>
+<publisherIdentity name="CN=ALEX\alexander" issuerKeyHash="a69269652cf104cd29b72ba8fff2eab0fa9b79c1" /><Signature Id="StrongNameSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>4h+pPAz7XqbAh6Q/4TNyzGGf/bA=</DigestValue></Reference></SignedInfo><SignatureValue>rqFxFk0Te0dA9D5EAzz9PwO5e/wWhMBI1JJM11pN048CzyddijpY1HG+whciHUBY3mceLeflb7r+Kn9L3W+nDlgZ1RoVNzbQsq7omgVMYzhuy4B6R6zpo/cPKGnh3xtv94yY48ugGpHP2AjxMHgOlwDqTX0a5jJjfo7yX0moFw4=</SignatureValue><KeyInfo Id="StrongNameKeyInfo"><KeyValue><RSAKeyValue><Modulus>soSK8jLR1XEyj1jYMhjm3fv6TdlD4dR5CzGMOhbIl5UcJa4r7heMdFU5+bKB8AFSUpr8eE9/IAHAchRoPfTSiC2v1Wo/uV6ctxWwJDBm57Tl+WAdk6h/URMhSBtaC3wYZ2EVMllaC4xUOKhfkTN7/YeROpAZ05nTjHz0dV287bU=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><msrel:RelData xmlns:msrel="http://schemas.microsoft.com/windows/rel/2005/reldata"><r:license xmlns:r="urn:mpeg:mpeg21:2003:01-REL-R-NS" xmlns:as="http://schemas.microsoft.com/windows/pki/2005/Authenticode"><r:grant><as:ManifestInformation Hash="b0fd9f61cc7233e13fa487c0a65efb0c3ca91fe2" Description="" Url=""><as:assemblyIdentity version="1.0.0.0" name="AntennaNetRotator.exe" publicKeyToken="c108627a09c3ea56" language="neutral" processorArchitecture="x86" type="win32" /></as:ManifestInformation><as:SignedBy /><as:AuthenticodePublisher><as:X509SubjectName>CN=ALEX\alexander</as:X509SubjectName></as:AuthenticodePublisher></r:grant><r:issuer><Signature Id="AuthenticodeSignature" xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>spySUD0tl0YwSmfz6mOkN3L2sb8=</DigestValue></Reference></SignedInfo><SignatureValue>G2NLo4FONMgGoqLeGPEadyMzpoiJx//WgdjuIUYWYZZf9SOZkU+qMOaQrjy+cTVuCLseQlF4K/bauBTUoeZMmdAA0WKCVyKC1IqZtdgvSrvYchFKo9xtnZWQ68wQZXyKln+EnjxL2kybNNi+r0sDnyl/hONeBGtXm4y8zkNVfPA=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>soSK8jLR1XEyj1jYMhjm3fv6TdlD4dR5CzGMOhbIl5UcJa4r7heMdFU5+bKB8AFSUpr8eE9/IAHAchRoPfTSiC2v1Wo/uV6ctxWwJDBm57Tl+WAdk6h/URMhSBtaC3wYZ2EVMllaC4xUOKhfkTN7/YeROpAZ05nTjHz0dV287bU=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue><X509Data><X509Certificate>MIIByTCCATagAwIBAgIQN8KpeNnyAKpLarsOGtMjuTAJBgUrDgMCHQUAMCcxJTAjBgNVBAMeHABBAEwARQBYAFwAYQBsAGUAeABhAG4AZABlAHIwHhcNMTQxMjE3MTE0OTAzWhcNMTUxMjE3MTc0OTAzWjAnMSUwIwYDVQQDHhwAQQBMAEUAWABcAGEAbABlAHgAYQBuAGQAZQByMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCyhIryMtHVcTKPWNgyGObd+/pN2UPh1HkLMYw6FsiXlRwlrivuF4x0VTn5soHwAVJSmvx4T38gAcByFGg99NKILa/Vaj+5Xpy3FbAkMGbntOX5YB2TqH9REyFIG1oLfBhnYRUyWVoLjFQ4qF+RM3v9h5E6kBnTmdOMfPR1XbzttQIDAQABMAkGBSsOAwIdBQADgYEAiZe0+p+AvuUAqn1aVGSVNYwBgA7nv7vAzZPDdwp42HTRXm25frycRijPvl3noc0l1KR3u90KD3FAv3ZKIBOMt0KbhPXpFERIMWBrvhEkKu4YFDAFerXhTIypMaT3YndmQdC0GE7wiLFI+JzufVkT2pMtLxBF9g2EDOAite2bfgQ=</X509Certificate></X509Data></KeyInfo></Signature></r:issuer></r:license></msrel:RelData></KeyInfo></Signature></asmv1:assembly>

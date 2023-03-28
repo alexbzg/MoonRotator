@@ -1,0 +1,9 @@
+Service , Message , Max , Min , Average , Count , frequency , TimedOut
+
+Tool,setupTool,273.0228,2.9909,0.33813333460097,10,0
+Tool,getContext,3.5014,0.5609,0.0258325057879476,40,0
+Tool,connect,7.8343,2.5013,0.339004890625,10,0
+Tool,setProperties,52.3801,2.9903,0.178973043232046,30,0
+Processes,launch,514.1441,421.1746,49.4537440042163,10,0
+Tool,disconnect,3.5024,1.5009,0.232999350060626,10,0
+Tool,tearDownTool,4.0029,0.7226,0.117702483355379,10,0

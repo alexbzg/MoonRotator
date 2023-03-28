@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppConf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <rotatorPaths>
+    <string>C:\works\rotator\EncRotator2\bin\Debug</string>
+    <string>C:\works\rotator\NetRotator5+\bin\Debug</string>
+  </rotatorPaths>
+  <devices>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry>
+        <programType>1</programType>
+        <name>40 m 2el</name>
+        <index>0</index>
+      </DeviceEntry>
+      <DeviceEntry>
+        <programType>0</programType>
+        <name>1.123</name>
+        <index>0</index>
+      </DeviceEntry>
+    </ArrayOfDeviceEntry>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry>
+        <programType>0</programType>
+        <name>1.241 (20m)</name>
+        <index>6</index>
+      </DeviceEntry>
+      <DeviceEntry>
+        <programType>0</programType>
+        <name>3.224</name>
+        <index>8</index>
+      </DeviceEntry>
+    </ArrayOfDeviceEntry>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry xsi:nil="true" />
+      <DeviceEntry xsi:nil="true" />
+    </ArrayOfDeviceEntry>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry xsi:nil="true" />
+      <DeviceEntry xsi:nil="true" />
+    </ArrayOfDeviceEntry>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry xsi:nil="true" />
+      <DeviceEntry xsi:nil="true" />
+    </ArrayOfDeviceEntry>
+    <ArrayOfDeviceEntry>
+      <DeviceEntry xsi:nil="true" />
+      <DeviceEntry xsi:nil="true" />
+    </ArrayOfDeviceEntry>
+  </devices>
+</AppConf>
