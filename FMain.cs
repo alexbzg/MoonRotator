@@ -41,7 +41,6 @@ namespace EncRotator
         int[] anglesChange = new int[] { 0, 0 };
         List<Bitmap> maps = new List<Bitmap>();
         volatile bool waitCursor;
-        volatile bool[] connectionPending = new bool[] { false, false };
         internal RotatorEngine[] rotators = new RotatorEngine[] { null, null };
         internal System.Threading.Timer[] readAngleTimers = new System.Threading.Timer[] { null, null };
         Dictionary<Keys, int>[] rotateKeys;
@@ -162,10 +161,6 @@ namespace EncRotator
             {
                 showMessage($"Подключение не удалось: {getConnectionByRotator(rotator).name}", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            connectionPending[rotatorIdx] = false;
-            
-            if (connectionPending.All(item => !item))
-                switchWaitCursor(false);
             updateMenu();
         }
 
@@ -669,11 +664,9 @@ namespace EncRotator
             for (int idx = 0; idx < 2; idx++)
             {
                 if (!rotators[idx].connected)
-                {
-                    connectionPending[idx] = true;
                     rotators[idx].connect();
-                }
             }
+            switchWaitCursor(false);
         }
 
         private int getRotatorIndex(Keys keys)
@@ -752,7 +745,10 @@ namespace EncRotator
         public int currentMap = -1;
         public System.Drawing.Point? formLocation = null;
         public System.Drawing.Size? formSize = null;
-        public ConnectionSettings[] connections = new ConnectionSettings[] { new ConnectionSettings() { name = "Азимут" }, new ConnectionSettings() { name = "Элевация" } };
+        public ConnectionSettings[] connections = new ConnectionSettings[] { 
+            new ConnectionSettings() { name = "Азимут", jeromeParams = new JeromeConnectionParams { usartPort = -1 } },
+            new ConnectionSettings() { name = "Элевация", jeromeParams = new JeromeConnectionParams { usartPort = -1 } }
+            };
         public int coils = 1;
         public int northAngle = -1;
         public int zenithAngle = -1;

@@ -53,7 +53,7 @@ namespace EncRotator
                     };
 
         DeviceTemplate template;
-        JeromeConnectionParams jeromeParams;
+        ConnectionSettings connectionSettings;
         JeromeController controller;
         internal int engineStatus = 0;
         internal volatile int limitReached = 0;
@@ -70,8 +70,7 @@ namespace EncRotator
 
         internal RotatorEngine(ConnectionSettings connectionSettings)
         {
-            this.jeromeParams = connectionSettings.jeromeParams;
-            jeromeParams.usartPort = -1; //disable usart
+            this.connectionSettings = connectionSettings;
             template = TEMPLATES[connectionSettings.deviceType];
         }
 
@@ -134,30 +133,32 @@ namespace EncRotator
 
         internal void connect()
         {
-            if (controller == null)
-                controller = JeromeController.create(jeromeParams);
-            if (controller.connect())
+            controller = JeromeController.create(connectionSettings.jeromeParams);
+            if (controller != null)
             {
-                controller.lineStateChanged += lineStateChanged;
-                controller.onDisconnected += controllerDisconnected;
-
-                setLine(template.ledLine, 0);
-                foreach (int line in template.engineLines.Values)
+                if (controller.connect())
                 {
-                    setLine(line, 0);
-                    toggleLine(line, 0);
+                    controller.lineStateChanged += lineStateChanged;
+                    controller.onDisconnected += controllerDisconnected;
+
+                    setLine(template.ledLine, 0);
+                    foreach (int line in template.engineLines.Values)
+                    {
+                        setLine(line, 0);
+                        toggleLine(line, 0);
+                    }
+                    foreach (int line in template.encoderLines)
+                        setLine(line, 1);
+
+                    onConnected?.Invoke(this, new ConnectionEventArgs { success = true });
+
+                    readAngle();
                 }
-                foreach (int line in template.encoderLines)
-                    setLine(line, 1);
-
-                onConnected?.Invoke(this, new ConnectionEventArgs { success = true });
-
-                readAngle();
-            }
-            else
-            {
-                onConnected?.Invoke(this, new ConnectionEventArgs { success = false });
-                controller = null;
+                else
+                {
+                    onConnected?.Invoke(this, new ConnectionEventArgs { success = false });
+                    controller = null;
+                }
             }
         }
 
