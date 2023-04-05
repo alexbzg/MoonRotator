@@ -5,10 +5,11 @@ using System.Linq;
 using System.Windows.Forms;
 using System.IO;
 using System.Xml.Serialization;
-using EncRotator.Properties;
 using Jerome;
 using AsyncConnectionNS;
 using System.Threading;
+using FFMpegUtils;
+using InputBox;
 
 namespace EncRotator
 {
@@ -45,6 +46,7 @@ namespace EncRotator
         internal System.Threading.Timer[] readAngleTimers = new System.Threading.Timer[] { null, null };
         Dictionary<Keys, int>[] rotateKeys;
         Dictionary<int, RotatorPanel> rotatorPanels;
+        FFPlayWindow camWindow;
 
 
         double mapRatio = 0;
@@ -110,6 +112,8 @@ namespace EncRotator
                 rotators[idx] = new RotatorEngine(formState.connections[idx]);
                 rotators[idx].onConnected += rotatorConnected;
             }
+
+
         }
 
         private void rotateToTargetClick(object sender, RotateToTargetClickEventArgs e)
@@ -261,31 +265,6 @@ namespace EncRotator
             }
         }
 
-        /*
-        private void onLimit(int dir)
-        {
-            if (limitReached == dir)
-                return;
-            if (engineStatus == dir)
-                engine(0);
-            if (currentConnection.hwLimits)
-                currentConnection.limits[dir] = currentAngle;
-            writeConfig();
-            this.Invoke((MethodInvoker)delegate
-            {
-                if (!slCalibration.Visible || slCalibration.Text != "Концевик")
-                {
-                    slCalibration.Text = "Концевик";
-                    slCalibration.Visible = true;
-                    string sDir = dir == 1 ? "по часовой стрелке" : "против часовой стрелки";
-                    showMessage("Достигнут концевик. Дальнейшее движение антенны " + sDir + " невозможно", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            });
-        }
-        */
-
-
-
         private int aD(int a, int b)
         {
             int r = a - b;
@@ -331,8 +310,12 @@ namespace EncRotator
         {
             return rotatorIdx == ROTATOR_H ?
                     absoluteValue - formState.northAngle + (absoluteValue < formState.northAngle ? 1023 : 0) :
-                    (int)((double)(absoluteValue - formState.horizonAngle) / (formState.zenithAngle - formState.horizonAngle) * 256);
+                    (int)((double)aD(absoluteValue, formState.horizonAngle) / aD(formState.zenithAngle, formState.horizonAngle) * 256);
+        }
 
+        private int rotatorVSign()
+        {
+            return Math.Sign(aD(formState.zenithAngle, formState.horizonAngle));
         }
 
         private void setOvercoilCaption()
@@ -346,6 +329,7 @@ namespace EncRotator
             int rotatorIdx = getRotatorIndex(rotator);
             if (e.angle != currentAngles[rotatorIdx])
             {
+                //warn if horizontal overcoil
                 if (rotatorIdx == ROTATOR_H && rotator.engineStatus != 0 && formState.northAngle != -1 && currentAngles[rotatorIdx] != -1 &&
                     Math.Sign(aD(formState.northAngle, currentAngles[rotatorIdx])) != Math.Sign(aD(formState.northAngle, e.angle)))
                 {
@@ -358,9 +342,11 @@ namespace EncRotator
                     });
                 }
 
+                //set current angle
                 anglesChange[rotatorIdx] += e.angle - currentAngles[rotatorIdx];
                 currentAngles[rotatorIdx] = e.angle;
-                
+
+                //stop if target is reached
                 if (angleValuesSet(rotatorIdx) && rotator.engineStatus != 0 && targetAngles[rotatorIdx] != -1)
                 {
                     int tD = aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx]);
@@ -372,11 +358,18 @@ namespace EncRotator
                             pMap.Invalidate();
                     }
                 }
+
+                //stop if vertical and getting out of bounds
+                if (rotatorIdx == ROTATOR_V && angleValuesSet(ROTATOR_V) && ((Math.Abs(aD(formState.zenithAngle, currentAngles[ROTATOR_V])) < 2 && rotator.engineStatus == rotatorVSign()) ||
+                        (Math.Abs(aD(formState.horizonAngle, currentAngles[ROTATOR_V])) < 2 && rotator.engineStatus == -rotatorVSign())))
+                    rotator.on(0);
+                
+                //show current angle
                 int displayAngle = currentAngles[rotatorIdx];
                 if (angleValuesSet(rotatorIdx))
                     displayAngle = relativeAngle(rotatorIdx, displayAngle);
-
                 rotatorPanels[rotatorIdx].displayAngle = displayAngle;
+
             }
         }
 
@@ -481,6 +474,7 @@ namespace EncRotator
         {
             closingFl = true;
             disconnect();
+            camWindow?.kill();
         }
 
         private void timer_Tick(object sender, EventArgs e)
@@ -599,9 +593,61 @@ namespace EncRotator
             if (formState.formLocation != null && formState.formSize != null)
                 this.DesktopBounds =
                     new Rectangle((Point)formState.formLocation, (Size)formState.formSize);
+            cbCam.Enabled = !string.IsNullOrEmpty(formState.camURL);
+            cbCam.Checked = formState.showCam;
             loaded = true;
-//            AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
-//            AutoUpdater.Start("http://73.ru/apps/AntennaNetRotatorRemote/update.xml");
+            if (formState.showCam)
+                showCam();
+
+            //            AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
+            //            AutoUpdater.Start("http://73.ru/apps/AntennaNetRotatorRemote/update.xml");
+        }
+
+        private void showCam()
+        {
+            //rtsp://admin:admin123@192.168.1.10:554/mode=real&idc=1&ids=2
+            if (!string.IsNullOrEmpty(formState.camURL) && camWindow == null)
+            {
+                try
+                {
+                    camWindow = new FFPlayWindow(formState.camURL, this.Handle);
+                    if (formState.camWindowPos.left != 0)
+                        camWindow.moveWindow(formState.camWindowPos);
+                    camWindow.windowResizeMove += camWindowResizeMove;
+                    camWindow.windowClose += camWindowClose;
+                }
+                catch (TimeoutException)
+                {
+                    showMessage("Не удалось подключиться к камере. Проверьте состояние камеры и настройки подключения.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    cbCam.Checked = false;
+                    formState.showCam = false;
+                    writeConfig();
+                }
+            }
+        }
+
+        private void unsubscribeCamEvents()
+        {
+            if (camWindow != null)
+            {
+                camWindow.windowClose -= camWindowClose;
+                camWindow.windowResizeMove -= camWindowResizeMove;
+            }
+        }
+        private void camWindowClose(object sender, EventArgs e)
+        {
+            formState.showCam = false;
+            cbCam.Checked = false;
+            writeConfig();
+            unsubscribeCamEvents();
+            camWindow?.Dispose();
+            camWindow = null;
+        }
+
+        private void camWindowResizeMove(object sender, WindowResizeMoveEventArgs e)
+        {
+            formState.camWindowPos = e.newWindowRect;
+            writeConfig();
         }
 
         private void fMain_ResizeEnd(object sender, EventArgs e)
@@ -719,6 +765,40 @@ namespace EncRotator
         {
             disconnect();
         }
+
+        private void miCamURL_Click(object sender, EventArgs e)
+        {
+            FInputBox urlInputBox = new FInputBox("Камера", formState.camURL);
+            if (urlInputBox.ShowDialog() == DialogResult.OK && urlInputBox.value != formState.camURL)
+            {
+                formState.camURL = urlInputBox.value;
+                writeConfig();
+                cbCam.Enabled = string.IsNullOrEmpty(formState.camURL);
+                if (camWindow != null)
+                {
+                    closeCam();
+                    showCam();
+                }
+            }
+        }
+
+        private void closeCam()
+        {
+            unsubscribeCamEvents();
+            camWindow?.kill();
+            camWindow?.Dispose();
+            camWindow = null;
+        }
+
+        private void cbCam_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cbCam.Checked)
+                showCam();
+            else
+                closeCam();
+            formState.showCam = cbCam.Checked;
+            writeConfig();
+        }
     }
 
 
@@ -745,6 +825,9 @@ namespace EncRotator
         public int currentMap = -1;
         public System.Drawing.Point? formLocation = null;
         public System.Drawing.Size? formSize = null;
+        public RECT camWindowPos = new RECT();
+        public bool showCam = false;
+        public string camURL = "rtsp://admin:admin123@192.168.1.10:554/mode=real&idc=1&ids=2";
         public ConnectionSettings[] connections = new ConnectionSettings[] { 
             new ConnectionSettings() { name = "Азимут", jeromeParams = new JeromeConnectionParams { usartPort = -1 } },
             new ConnectionSettings() { name = "Элевация", jeromeParams = new JeromeConnectionParams { usartPort = -1 } }

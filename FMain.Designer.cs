@@ -26,6 +26,7 @@
             this.miConnections = new System.Windows.Forms.ToolStripMenuItem();
             this.miHConnection = new System.Windows.Forms.ToolStripMenuItem();
             this.miVConnection = new System.Windows.Forms.ToolStripMenuItem();
+            this.miCamURL = new System.Windows.Forms.ToolStripMenuItem();
             this.miMaps = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapAdd = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapRemove = new System.Windows.Forms.ToolStripMenuItem();
@@ -44,6 +45,7 @@
             this.bStop = new System.Windows.Forms.Button();
             this.rotatorPanelH = new EncRotator.RotatorPanel();
             this.rotatorPanelV = new EncRotator.RotatorPanel();
+            this.cbCam = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -52,7 +54,8 @@
             // 
             this.miConnections.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miHConnection,
-            this.miVConnection});
+            this.miVConnection,
+            this.miCamURL});
             this.miConnections.Name = "miConnections";
             this.miConnections.Size = new System.Drawing.Size(291, 34);
             this.miConnections.Text = "Соединения";
@@ -60,16 +63,23 @@
             // miHConnection
             // 
             this.miHConnection.Name = "miHConnection";
-            this.miHConnection.Size = new System.Drawing.Size(179, 34);
+            this.miHConnection.Size = new System.Drawing.Size(180, 34);
             this.miHConnection.Text = "Азимут";
             this.miHConnection.Click += new System.EventHandler(this.miEditConnection_Click);
             // 
             // miVConnection
             // 
             this.miVConnection.Name = "miVConnection";
-            this.miVConnection.Size = new System.Drawing.Size(179, 34);
+            this.miVConnection.Size = new System.Drawing.Size(180, 34);
             this.miVConnection.Text = "Элевация";
             this.miVConnection.Click += new System.EventHandler(this.miEditConnection_Click);
+            // 
+            // miCamURL
+            // 
+            this.miCamURL.Name = "miCamURL";
+            this.miCamURL.Size = new System.Drawing.Size(180, 34);
+            this.miCamURL.Text = "Камера";
+            this.miCamURL.Click += new System.EventHandler(this.miCamURL_Click);
             // 
             // miMaps
             // 
@@ -146,7 +156,7 @@
             this.pMap.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.pMap.Location = new System.Drawing.Point(0, 29);
             this.pMap.Name = "pMap";
-            this.pMap.Size = new System.Drawing.Size(382, 324);
+            this.pMap.Size = new System.Drawing.Size(385, 324);
             this.pMap.TabIndex = 16;
             this.pMap.TabStop = false;
             this.pMap.Paint += new System.Windows.Forms.PaintEventHandler(this.pMap_Paint);
@@ -162,7 +172,7 @@
             this.ddSettings});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(382, 26);
+            this.toolStrip1.Size = new System.Drawing.Size(385, 26);
             this.toolStrip1.TabIndex = 17;
             this.toolStrip1.Text = "toolStrip1";
             // 
@@ -213,7 +223,7 @@
             // 
             this.bStop.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bStop.Image = global::EncRotator.Properties.Resources.stop;
-            this.bStop.Location = new System.Drawing.Point(321, 480);
+            this.bStop.Location = new System.Drawing.Point(324, 480);
             this.bStop.Name = "bStop";
             this.bStop.Size = new System.Drawing.Size(60, 60);
             this.bStop.TabIndex = 22;
@@ -223,7 +233,7 @@
             // rotatorPanelH
             // 
             this.rotatorPanelH.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.rotatorPanelH.Location = new System.Drawing.Point(51, 371);
+            this.rotatorPanelH.Location = new System.Drawing.Point(59, 371);
             this.rotatorPanelH.Name = "rotatorPanelH";
             this.rotatorPanelH.Size = new System.Drawing.Size(129, 175);
             this.rotatorPanelH.TabIndex = 23;
@@ -231,16 +241,28 @@
             // rotatorPanelV
             // 
             this.rotatorPanelV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.rotatorPanelV.Location = new System.Drawing.Point(186, 371);
+            this.rotatorPanelV.Location = new System.Drawing.Point(194, 371);
             this.rotatorPanelV.Name = "rotatorPanelV";
             this.rotatorPanelV.Size = new System.Drawing.Size(129, 175);
             this.rotatorPanelV.TabIndex = 24;
+            // 
+            // cbCam
+            // 
+            this.cbCam.Appearance = System.Windows.Forms.Appearance.Button;
+            this.cbCam.Image = global::EncRotator.Properties.Resources.moon;
+            this.cbCam.Location = new System.Drawing.Point(0, 480);
+            this.cbCam.Name = "cbCam";
+            this.cbCam.Size = new System.Drawing.Size(60, 60);
+            this.cbCam.TabIndex = 25;
+            this.cbCam.UseVisualStyleBackColor = true;
+            this.cbCam.CheckedChanged += new System.EventHandler(this.cbCam_CheckedChanged);
             // 
             // fMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(382, 550);
+            this.ClientSize = new System.Drawing.Size(385, 550);
+            this.Controls.Add(this.cbCam);
             this.Controls.Add(this.rotatorPanelV);
             this.Controls.Add(this.rotatorPanelH);
             this.Controls.Add(this.bStop);
@@ -288,6 +310,8 @@
         private RotatorPanel rotatorPanelH;
         private RotatorPanel rotatorPanelV;
         private System.Windows.Forms.ToolStripMenuItem miDisconnect;
+        private System.Windows.Forms.ToolStripMenuItem miCamURL;
+        private System.Windows.Forms.CheckBox cbCam;
     }
 }
 

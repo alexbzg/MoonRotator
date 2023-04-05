@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33424.131
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetRotator", "NetRotator.csproj", "{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}"
 EndProject
@@ -15,35 +15,49 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Debug|x64.ActiveCfg = Debug|x64
+		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Debug|x64.Build.0 = Debug|x64
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Debug|x86.ActiveCfg = Debug|x86
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Debug|x86.Build.0 = Debug|x86
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Release|Any CPU.ActiveCfg = Release|x86
+		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Release|x64.ActiveCfg = Release|x64
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Release|x86.ActiveCfg = Release|x86
 		{E3B7AA31-F4BB-434C-8079-1B65D08AF0D7}.Release|x86.Build.0 = Release|x86
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Debug|Any CPU.ActiveCfg = Debug
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Debug|Any CPU.Build.0 = Debug
+		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Debug|x64.ActiveCfg = Debug
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Debug|x86.ActiveCfg = Debug
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Debug|x86.Build.0 = Debug
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Release|Any CPU.ActiveCfg = Release
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Release|Any CPU.Build.0 = Release
+		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Release|x64.ActiveCfg = Release
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Release|x86.ActiveCfg = Release
 		{3CE987FC-F97D-4EDA-A98C-328C2DCD8B41}.Release|x86.Build.0 = Release
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|x64.ActiveCfg = Debug|x64
+		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|x64.Build.0 = Debug|x64
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Debug|x86.Build.0 = Debug|Any CPU
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|x64.ActiveCfg = Release|x64
+		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|x64.Build.0 = Release|x64
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|x86.ActiveCfg = Release|Any CPU
 		{E55F70AE-C046-426A-BACB-2A1ED69BCD5B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4595C08B-AA4B-4901-A7FA-1130546CFA95}
 	EndGlobalSection
 EndGlobal

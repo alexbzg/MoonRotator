@@ -20,4 +20,10 @@
     </StartArguments>
     <StartWorkingDirectory>C:\works\rotator\EncRotator2\bin\Debug\</StartWorkingDirectory>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <StartWorkingDirectory>C:\works\rotator\EncRotator2\bin\Debug\</StartWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <StartWorkingDirectory>C:\works\rotator\EncRotator2\bin\Debug\</StartWorkingDirectory>
+  </PropertyGroup>
 </Project>

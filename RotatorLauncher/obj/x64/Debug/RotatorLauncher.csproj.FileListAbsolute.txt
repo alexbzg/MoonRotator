@@ -1,0 +1,11 @@
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\bin\x64\Debug\RotatorLauncher.exe.config
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\bin\x64\Debug\RotatorLauncher.exe
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\bin\x64\Debug\RotatorLauncher.pdb
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.csproj.AssemblyReference.cache
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.csproj.SuggestedBindingRedirects.cache
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.FMain.resources
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.Properties.Resources.resources
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.csproj.GenerateResource.cache
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.csproj.CoreCompileInputs.cache
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.exe
+C:\works\rotator\MoonRotatorRemote\RotatorLauncher\obj\x64\Debug\RotatorLauncher.pdb
