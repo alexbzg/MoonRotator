@@ -31,7 +31,7 @@
             this.miMapAdd = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapRemove = new System.Windows.Forms.ToolStripMenuItem();
             this.miSetValues = new System.Windows.Forms.ToolStripMenuItem();
-            this.miSetNorth = new System.Windows.Forms.ToolStripMenuItem();
+            this.miSetAzimuth = new System.Windows.Forms.ToolStripMenuItem();
             this.miSetHorizon = new System.Windows.Forms.ToolStripMenuItem();
             this.miSetZenith = new System.Windows.Forms.ToolStripMenuItem();
             this.miModuleSettings = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,21 +63,21 @@
             // miHConnection
             // 
             this.miHConnection.Name = "miHConnection";
-            this.miHConnection.Size = new System.Drawing.Size(180, 34);
+            this.miHConnection.Size = new System.Drawing.Size(179, 34);
             this.miHConnection.Text = "Азимут";
             this.miHConnection.Click += new System.EventHandler(this.miEditConnection_Click);
             // 
             // miVConnection
             // 
             this.miVConnection.Name = "miVConnection";
-            this.miVConnection.Size = new System.Drawing.Size(180, 34);
+            this.miVConnection.Size = new System.Drawing.Size(179, 34);
             this.miVConnection.Text = "Элевация";
             this.miVConnection.Click += new System.EventHandler(this.miEditConnection_Click);
             // 
             // miCamURL
             // 
             this.miCamURL.Name = "miCamURL";
-            this.miCamURL.Size = new System.Drawing.Size(180, 34);
+            this.miCamURL.Size = new System.Drawing.Size(179, 34);
             this.miCamURL.Text = "Камера";
             this.miCamURL.Click += new System.EventHandler(this.miCamURL_Click);
             // 
@@ -107,7 +107,7 @@
             // miSetValues
             // 
             this.miSetValues.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.miSetNorth,
+            this.miSetAzimuth,
             this.miSetHorizon,
             this.miSetZenith});
             this.miSetValues.Name = "miSetValues";
@@ -117,22 +117,22 @@
             // 
             // miSetNorth
             // 
-            this.miSetNorth.Name = "miSetNorth";
-            this.miSetNorth.Size = new System.Drawing.Size(174, 34);
-            this.miSetNorth.Text = "Север";
-            this.miSetNorth.Click += new System.EventHandler(this.miSetValueClick);
+            this.miSetAzimuth.Name = "miSetNorth";
+            this.miSetAzimuth.Size = new System.Drawing.Size(180, 34);
+            this.miSetAzimuth.Text = "Азимут";
+            this.miSetAzimuth.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetHorizon
             // 
             this.miSetHorizon.Name = "miSetHorizon";
-            this.miSetHorizon.Size = new System.Drawing.Size(174, 34);
+            this.miSetHorizon.Size = new System.Drawing.Size(180, 34);
             this.miSetHorizon.Text = "Горизонт";
             this.miSetHorizon.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetZenith
             // 
             this.miSetZenith.Name = "miSetZenith";
-            this.miSetZenith.Size = new System.Drawing.Size(174, 34);
+            this.miSetZenith.Size = new System.Drawing.Size(180, 34);
             this.miSetZenith.Text = "Зенит";
             this.miSetZenith.Click += new System.EventHandler(this.miSetValueClick);
             // 
@@ -304,7 +304,7 @@
         private System.Windows.Forms.ToolStripMenuItem miVConnection;
         private System.Windows.Forms.ToolStripMenuItem miConnect;
         private System.Windows.Forms.Button bStop;
-        private System.Windows.Forms.ToolStripMenuItem miSetNorth;
+        private System.Windows.Forms.ToolStripMenuItem miSetAzimuth;
         private System.Windows.Forms.ToolStripMenuItem miSetHorizon;
         private System.Windows.Forms.ToolStripMenuItem miSetZenith;
         private RotatorPanel rotatorPanelH;

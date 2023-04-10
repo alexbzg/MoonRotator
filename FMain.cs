@@ -10,6 +10,7 @@ using AsyncConnectionNS;
 using System.Threading;
 using FFMpegUtils;
 using InputBox;
+using System.Globalization;
 
 namespace EncRotator
 {
@@ -176,7 +177,7 @@ namespace EncRotator
                 miConnect.Visible = connected != 2;
                 miDisconnect.Visible = connected != 0;
                 miSetValues.Visible = connected != 0;
-                miSetNorth.Visible = rotators[ROTATOR_H].connected;
+                miSetAzimuth.Visible = rotators[ROTATOR_H].connected;
                 miSetHorizon.Visible = rotators[ROTATOR_V].connected;
                 miSetZenith.Visible = rotators[ROTATOR_V].connected;
             });
@@ -729,11 +730,31 @@ namespace EncRotator
         private void miSetValueClick(object sender, EventArgs e)
         {
             ToolStripMenuItem mi = (ToolStripMenuItem)sender;
-            if (mi == miSetNorth)
+            if (mi == miSetAzimuth)
             {
-                formState.northAngle = currentAngles[ROTATOR_H];
-                pMap.Invalidate();
-                rotatorPanelH.displayAngle = relativeAngle(ROTATOR_H, currentAngles[ROTATOR_H]);
+                FInputBox urlInputBox = new FInputBox("Азимут", "0.0");
+                if (urlInputBox.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        float currentAngleDeg = float.Parse(urlInputBox.value, CultureInfo.InvariantCulture);
+                        if (currentAngleDeg < 0 || currentAngleDeg > 360)
+                            throw new OverflowException();
+                        int northAngle = (int)(currentAngles[ROTATOR_H] - currentAngleDeg * 2.84166);
+                        if (northAngle < 0)
+                            northAngle += 1023;
+                        if (northAngle != formState.northAngle)
+                        {
+                            formState.northAngle = northAngle;
+                            pMap.Invalidate();
+                            rotatorPanelH.displayAngle = relativeAngle(ROTATOR_H, currentAngles[ROTATOR_H]);
+                        }
+                    }
+                    catch
+                    {
+                        showMessage("Введите число от 0 до 360.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
             } else
             {
                 int prevValue;
@@ -749,7 +770,7 @@ namespace EncRotator
                 }
                 if (formState.zenithAngle == formState.horizonAngle)
                 {
-                    showMessage("Горизонт не может совпадать с зенитом!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    showMessage("Горизонт не может совпадать с зенитом.", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     if (mi == miSetHorizon)
                         formState.horizonAngle = prevValue;
                     else 

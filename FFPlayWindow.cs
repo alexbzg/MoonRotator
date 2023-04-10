@@ -371,10 +371,6 @@ namespace FFMpegUtils
             _winEventCallbackDestroy = new WinEventDelegate(winEventCallbackDestroy);
             winEventHooks[WinEvents.EVENT_OBJECT_DESTROY] = SetWinEventHook(WinEvents.EVENT_OBJECT_DESTROY, WinEvents.EVENT_OBJECT_DESTROY, IntPtr.Zero, _winEventCallbackDestroy,
                                 (uint)ffplay.Id, 0, WinEventFlags.WINEVENT_OUTOFCONTEXT | WinEventFlags.WINEVENT_SKIPOWNPROCESS);
-            //IntPtr newHndl = SetParent(ffplay.MainWindowHandle, parent);
-            //throw new Win32Exception();
-            //debugFFPlayWindow("parent set");
-            //debugWindowRect(newHndl);
         }
 
         private void ffplayExited(object sender, EventArgs e)
@@ -397,6 +393,7 @@ namespace FFMpegUtils
             IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
         {
             unhookEvents();
+            ffplay?.Dispose();
             ffplay = null;
             windowClose?.Invoke(this, null);
         }
