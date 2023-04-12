@@ -45,7 +45,7 @@ namespace EncRotator
         }
 
         static internal DeviceTemplate[] TEMPLATES = {
-                    new DeviceTemplate { engineLines = new Dictionary<int, int>{ { 1, 15 }, { -1, 14 } },
+                    new DeviceTemplate { engineLines = new Dictionary<int, int>{ { -1, 15 }, { 1, 14 } },
                                             encoderLines = new int[] { 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 },
                                             limitsLines = new Dictionary<int, int> {  { 1, 21 }, { -1, 20 } },
                                             ledLine = 22
