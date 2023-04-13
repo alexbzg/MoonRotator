@@ -205,7 +205,7 @@ namespace Jerome
             }
             else if ( !reply.StartsWith( "#SLINF" ) && !reply.Contains( "FLAGS" ) && !reply.Contains( "JConfig" ) )
             {
-                replyTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                replyTimer?.Change(Timeout.Infinite, Timeout.Infinite);
                 if (currentCmd != null && currentCmd.cb != null)
                 {
                     Action<string> cb = currentCmd.cb;

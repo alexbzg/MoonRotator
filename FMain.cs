@@ -160,7 +160,10 @@ namespace EncRotator
 
                 rotatorPanels[rotatorIdx].rotatorConnected = true;
                 if (rotatorIdx == ROTATOR_H)
+                {
                     setOvercoilCaption();
+                    pMap.Invalidate();
+                }
             }
             else
             {
@@ -794,7 +797,7 @@ namespace EncRotator
             {
                 formState.camURL = urlInputBox.value;
                 writeConfig();
-                cbCam.Enabled = string.IsNullOrEmpty(formState.camURL);
+                cbCam.Enabled = !string.IsNullOrEmpty(formState.camURL);
                 if (camWindow != null)
                 {
                     closeCam();
