@@ -46,6 +46,9 @@
             this.rotatorPanelH = new EncRotator.RotatorPanel();
             this.rotatorPanelV = new EncRotator.RotatorPanel();
             this.cbCam = new System.Windows.Forms.CheckBox();
+            this.miReset = new System.Windows.Forms.ToolStripMenuItem();
+            this.miResetAzimuth = new System.Windows.Forms.ToolStripMenuItem();
+            this.miResetElevation = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -115,24 +118,24 @@
             this.miSetValues.Text = "Установить значения";
             this.miSetValues.Visible = false;
             // 
-            // miSetNorth
+            // miSetAzimuth
             // 
-            this.miSetAzimuth.Name = "miSetNorth";
-            this.miSetAzimuth.Size = new System.Drawing.Size(180, 34);
+            this.miSetAzimuth.Name = "miSetAzimuth";
+            this.miSetAzimuth.Size = new System.Drawing.Size(174, 34);
             this.miSetAzimuth.Text = "Азимут";
             this.miSetAzimuth.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetHorizon
             // 
             this.miSetHorizon.Name = "miSetHorizon";
-            this.miSetHorizon.Size = new System.Drawing.Size(180, 34);
+            this.miSetHorizon.Size = new System.Drawing.Size(174, 34);
             this.miSetHorizon.Text = "Горизонт";
             this.miSetHorizon.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetZenith
             // 
             this.miSetZenith.Name = "miSetZenith";
-            this.miSetZenith.Size = new System.Drawing.Size(180, 34);
+            this.miSetZenith.Size = new System.Drawing.Size(174, 34);
             this.miSetZenith.Text = "Зенит";
             this.miSetZenith.Click += new System.EventHandler(this.miSetValueClick);
             // 
@@ -196,7 +199,8 @@
             this.miConnections,
             this.miMaps,
             this.miSetValues,
-            this.miModuleSettings});
+            this.miModuleSettings,
+            this.miReset});
             this.ddSettings.ForeColor = System.Drawing.Color.Transparent;
             this.ddSettings.Image = ((System.Drawing.Image)(resources.GetObject("ddSettings.Image")));
             this.ddSettings.ImageTransparentColor = System.Drawing.Color.Black;
@@ -257,6 +261,28 @@
             this.cbCam.UseVisualStyleBackColor = true;
             this.cbCam.CheckedChanged += new System.EventHandler(this.cbCam_CheckedChanged);
             // 
+            // miReset
+            // 
+            this.miReset.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.miResetAzimuth,
+            this.miResetElevation});
+            this.miReset.Name = "miReset";
+            this.miReset.Size = new System.Drawing.Size(291, 34);
+            this.miReset.Text = "Перезапуск";
+            // 
+            // miResetAzimuth
+            // 
+            this.miResetAzimuth.Name = "miResetAzimuth";
+            this.miResetAzimuth.Size = new System.Drawing.Size(180, 34);
+            this.miResetAzimuth.Text = "Азимут";
+            this.miResetAzimuth.Click += new System.EventHandler(this.miReset_Click);
+            // 
+            // miResetElevation
+            // 
+            this.miResetElevation.Name = "miResetElevation";
+            this.miResetElevation.Size = new System.Drawing.Size(180, 34);
+            this.miResetElevation.Text = "Элевация";
+            // 
             // fMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -312,6 +338,9 @@
         private System.Windows.Forms.ToolStripMenuItem miDisconnect;
         private System.Windows.Forms.ToolStripMenuItem miCamURL;
         private System.Windows.Forms.CheckBox cbCam;
+        private System.Windows.Forms.ToolStripMenuItem miReset;
+        private System.Windows.Forms.ToolStripMenuItem miResetAzimuth;
+        private System.Windows.Forms.ToolStripMenuItem miResetElevation;
     }
 }
 

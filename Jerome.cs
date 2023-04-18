@@ -11,6 +11,9 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using AsyncConnectionNS;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using static System.Net.WebRequestMethods;
+using Microsoft.VisualStudio.Threading;
 
 namespace Jerome
 {
@@ -23,7 +26,8 @@ namespace Jerome
 
     public class JeromeController
     {
-
+        const int LINE_IN = 1;
+        const int LINE_OUT = 2;
         class CmdEntry
         {
             public string cmd;
@@ -36,13 +40,16 @@ namespace Jerome
             }
         }
 
+
         private volatile CmdEntry currentCmd = null;
-        private Object cmdQueeLock = new Object();
+        private object cmdQueeLock = new object();
         private List<CmdEntry> cmdQuee = new List<CmdEntry>();
 
 
 
-        private static int timeout = 10000;
+        private const int TIMEOUT = 10000;
+        private static TimeSpan TIMEOUT_SPAN = new TimeSpan(TIMEOUT);
+        private const int PING_INTERVAL = 20000;
         private static Regex rEVT = new Regex(@"#EVT,IN,\d+,(\d+),(\d)");
         private System.Threading.Timer replyTimer;
 
@@ -130,43 +137,61 @@ namespace Jerome
                     currentCmd = cmdQuee[0];
                     cmdQuee.RemoveAt(0);
                 }
-                connection.sendCommand("$KE," + currentCmd.cmd);
-                replyTimer = new Timer( obj => replyTimeout(), null, timeout, Timeout.Infinite);
+                string cmd = "$KE";
+                if (!string.IsNullOrEmpty(currentCmd.cmd)) {
+                    cmd += $",{currentCmd.cmd}";
+                }
+                connection.sendCommand(cmd);
+                replyTimer = new Timer( obj => replyTimeout(), null, TIMEOUT, Timeout.Infinite);
             }
         }
 
-        public string sendCommand(string cmd)
+        private async void ping()
         {
-            string result = "";
-            ManualResetEvent reDone = new ManualResetEvent(false);
+            if (cmdQuee.Count > 0 && currentCmd == null)
+                await sendCommand("");
+        }
+
+        public async Task<string> sendCommand(string cmd)
+        {
+            string result = null;
+            AsyncManualResetEvent reDone = new AsyncManualResetEvent(false);
             newCmd(cmd, delegate (string r)
             {
                 result = r;
                 reDone.Set();
             });
-            reDone.WaitOne(timeout);
+            await reDone.WaitAsync().WithTimeout(TIMEOUT_SPAN);
             return result;
         }
 
 
 
-        public bool connect()
+        public async Task<bool> connect()
         {
-            connection = new AsyncConnection();
-            connection.connect(connectionParams.host, connectionParams.port);
-            if (connection.connected)
+            bool result = false;
+            AsyncManualResetEvent reConnect = new AsyncManualResetEvent();
+
+            await Task.Run(() =>
             {
-                connection.lineReceived += processReply;
-                sendCommand("PSW,SET," + connectionParams.password);
-                sendCommand("EVT,ON");
-                if (connectionParams.usartPort != -1)
+                connection = new AsyncConnection();
+                connection.connect(connectionParams.host, connectionParams.port);
+                if (connection.connected)
                 {
-                    usartConnection = new AsyncConnection();
-                    usartConnection.connect(connectionParams.host, connectionParams.usartPort);
+                    connection.lineReceived += processReply;
+                    _ = sendCommand("PSW,SET," + connectionParams.password);
+                    _ = sendCommand("EVT,ON");
+                    if (connectionParams.usartPort != -1)
+                    {
+                        usartConnection = new AsyncConnection();
+                        usartConnection.connect(connectionParams.host, connectionParams.usartPort);
+                    }
+                    result = true;
                 }
-                return true;
-            } else
-                return false;
+                reConnect.Set();
+            });
+            await reConnect.WaitAsync().WithTimeout(TIMEOUT_SPAN);
+            return result;
         }
 
         private void UsartConnection_lineReceived(object sender, LineReceivedEventArgs e)
@@ -209,7 +234,7 @@ namespace Jerome
                 if (currentCmd != null && currentCmd.cb != null)
                 {
                     Action<string> cb = currentCmd.cb;
-                    Task.Factory.StartNew( () => cb.Invoke(reply) );
+                    Task.Run( () => cb.Invoke(reply) );
                 }
                 lock (cmdQuee)
                 {
@@ -230,9 +255,9 @@ namespace Jerome
             sendCommand("WR," + line.ToString() + "," + state.ToString());
         }
 
-        public string readlines()
+        public async Task<string> readlines()
         {
-            string reply = sendCommand("RID,ALL");
+            string reply = await sendCommand("RID,ALL");
             int split = reply.LastIndexOf( ',' );
             return reply.Substring(split + 1).TrimEnd('\r', '\n');
         }
@@ -251,6 +276,8 @@ namespace Jerome
 
     public class JeromeConnectionParams
     {
+
+
         public string name;
         public string host;
         public int port = 2424;
@@ -258,41 +285,82 @@ namespace Jerome
         public string password = "Jerome";
         public int httpPort = 80;
 
-        public JeromeControllerState getState()
+        public async Task<HttpWebResponse> request(string path, string query = "", bool discard = true, bool reset = false)
         {
-            HttpWebRequest rq = (HttpWebRequest)WebRequest.Create("http://" + host + ":" + httpPort + "/state.xml");
-            try
-            {
-                HttpWebResponse resp = (HttpWebResponse)rq.GetResponse();
-                if (resp.StatusCode == System.Net.HttpStatusCode.OK)
+            if (string.IsNullOrEmpty(host) || httpPort == 0)
+                return null;
+
+            string authHeader = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes("admin:Jerome"));
+            string url = $"http://{host}:{httpPort}/{path}";
+            if (!string.IsNullOrEmpty(query)) { 
+                url += "?" + query;
+            }
+            try { 
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Headers.Add("Authorization", "Basic " + authHeader);
+                if (reset)
                 {
-                    XElement xr;
-                    using (StreamReader stream = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
-                    {
-                        xr = XElement.Parse(stream.ReadToEnd());
-                    }
-                    JeromeControllerState result = new JeromeControllerState();
-                    string linesModes = xr.XPathSelectElement("iotable").Value;
-                    string linesStates = xr.XPathSelectElement("iovalue").Value;
-                    for (int co = 0; co < 22; co++)
-                    {
-                        result.linesModes[co] = linesModes[co] == '1';
-                        result.linesStates[co] = linesStates[co] == '1';
-                    }
-                    for (int co = 0; co < 4; co++)
-                        result.adcsValues[co] = (int)xr.XPathSelectElement("adc" + (co + 1).ToString());
-                    return result;
+                    _ = request.GetResponseAsync();
+                    return null;
+                }
+                HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync();
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    if (!discard)
+                        return response;
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Query to " + host + ":" + httpPort.ToString() +
-                        " returned status code" + resp.StatusCode.ToString());
+                    using (StreamReader stream = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                    {
+                        Debug.WriteLine($"Query to {url} failed with code {response.StatusCode}.");
+                        Debug.WriteLine(stream.ReadToEnd());
+                    }
                 }
+                response.Close();
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine("Query to " + host + ":" + httpPort.ToString() +
-                    " error: " + e.ToString());
+                Debug.WriteLine($"Query to {url} raised exception {e}.");
+            }
+            return null;
+        }
+
+        public void toggleLineType(int lineNo)
+        {
+            request("server.cgi", $"data=SIO,{lineNo}");
+        }
+
+        public void toggleLineState(int lineNo)
+        {
+            request("server.cgi", $"data=OUT,{lineNo},undefined");
+        }
+
+        public void reset()
+        {
+            request("server.cgi", "data=RST", reset: true);
+        }
+
+        public async Task<JeromeControllerState> getState()
+        {
+            HttpWebResponse response = await request("state.xml", discard: false);
+            if (response != null) {
+                XElement xr;
+                using (StreamReader stream = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                {
+                    xr = XElement.Parse(stream.ReadToEnd());
+                }
+                JeromeControllerState result = new JeromeControllerState();
+                string linesModes = xr.XPathSelectElement("iotable").Value;
+                string linesStates = xr.XPathSelectElement("iovalue").Value;
+                for (int co = 0; co < 22; co++)
+                {
+                    result.linesModes[co] = linesModes[co] == '1';
+                    result.linesStates[co] = linesStates[co] == '1';
+                }
+                for (int co = 0; co < 4; co++)
+                    result.adcsValues[co] = (int)xr.XPathSelectElement("adc" + (co + 1).ToString());
+                return result;
             }
             return null;
         }

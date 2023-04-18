@@ -31,8 +31,8 @@
             this.lDisplayAngle = new System.Windows.Forms.Label();
             this.nTargetAngle = new System.Windows.Forms.NumericUpDown();
             this.bRotateToTarget = new System.Windows.Forms.Button();
-            this.bRotateCCW = new System.Windows.Forms.Button();
             this.bRotateCW = new System.Windows.Forms.Button();
+            this.bRotateCCW = new System.Windows.Forms.Button();
             this.lWarning = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.nTargetAngle)).BeginInit();
             this.SuspendLayout();
@@ -78,27 +78,27 @@
             // 
             // bRotateCCW
             // 
-            this.bRotateCCW.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bRotateCCW.Location = new System.Drawing.Point(3, 109);
-            this.bRotateCCW.Name = "bRotateCCW";
-            this.bRotateCCW.Size = new System.Drawing.Size(60, 60);
-            this.bRotateCCW.TabIndex = 3;
-            this.bRotateCCW.UseVisualStyleBackColor = true;
-            this.bRotateCCW.MouseDown += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseDown);
-            this.bRotateCCW.MouseLeave += new System.EventHandler(this._rotateButtonMouseLeave);
-            this.bRotateCCW.MouseUp += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseUp);
-            // 
-            // bRotateCW
-            // 
             this.bRotateCW.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bRotateCW.Location = new System.Drawing.Point(66, 109);
-            this.bRotateCW.Name = "bRotateCW";
+            this.bRotateCW.Location = new System.Drawing.Point(3, 109);
+            this.bRotateCW.Name = "bRotateCCW";
             this.bRotateCW.Size = new System.Drawing.Size(60, 60);
-            this.bRotateCW.TabIndex = 4;
+            this.bRotateCW.TabIndex = 3;
             this.bRotateCW.UseVisualStyleBackColor = true;
             this.bRotateCW.MouseDown += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseDown);
             this.bRotateCW.MouseLeave += new System.EventHandler(this._rotateButtonMouseLeave);
             this.bRotateCW.MouseUp += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseUp);
+            // 
+            // bRotateCW
+            // 
+            this.bRotateCCW.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.bRotateCCW.Location = new System.Drawing.Point(66, 109);
+            this.bRotateCCW.Name = "bRotateCW";
+            this.bRotateCCW.Size = new System.Drawing.Size(60, 60);
+            this.bRotateCCW.TabIndex = 4;
+            this.bRotateCCW.UseVisualStyleBackColor = true;
+            this.bRotateCCW.MouseDown += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseDown);
+            this.bRotateCCW.MouseLeave += new System.EventHandler(this._rotateButtonMouseLeave);
+            this.bRotateCCW.MouseUp += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseUp);
             // 
             // lWarning
             // 
@@ -117,8 +117,8 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.lWarning);
-            this.Controls.Add(this.bRotateCW);
             this.Controls.Add(this.bRotateCCW);
+            this.Controls.Add(this.bRotateCW);
             this.Controls.Add(this.bRotateToTarget);
             this.Controls.Add(this.nTargetAngle);
             this.Controls.Add(this.lDisplayAngle);
@@ -134,8 +134,8 @@
         private System.Windows.Forms.Label lDisplayAngle;
         private System.Windows.Forms.NumericUpDown nTargetAngle;
         private System.Windows.Forms.Button bRotateToTarget;
-        private System.Windows.Forms.Button bRotateCCW;
         private System.Windows.Forms.Button bRotateCW;
+        private System.Windows.Forms.Button bRotateCCW;
         private System.Windows.Forms.Label lWarning;
     }
 }

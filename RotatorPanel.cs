@@ -93,7 +93,7 @@ namespace EncRotator
         {
             if (blinkDir == dir && rotateButtons[dir].Image != null)
                 return null;
-            if (dir == 1)
+            if (dir == -1)
             {
                 switch (rotatorIdx)
                 {
@@ -142,7 +142,7 @@ namespace EncRotator
         private void _rotateButtonMouseDown(object sender, MouseEventArgs e)
         {
             rotateButtonMouseDown?.Invoke(this, new RotateButtonMouseDownEventArgs { 
-                dir = (Button)sender == bRotateCW ? 1 : -1,
+                dir = (Button)sender == bRotateCCW ? 1 : -1,
                 rotatorIdx = rotatorIdx
             });
         }

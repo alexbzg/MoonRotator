@@ -11,6 +11,8 @@ using System.Threading;
 using FFMpegUtils;
 using InputBox;
 using System.Globalization;
+using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
 
 namespace EncRotator
 {
@@ -112,6 +114,7 @@ namespace EncRotator
             {
                 rotators[idx] = new RotatorEngine(formState.connections[idx]);
                 rotators[idx].onConnected += rotatorConnected;
+                rotators[idx].onAngleRead += rotatorAngleRead;
             }
 
 
@@ -155,8 +158,11 @@ namespace EncRotator
 
                 timer.Enabled = true;
 
-                miSetValues.Visible = true;
-                miSetValues.Enabled = true;
+                Invoke((MethodInvoker)delegate
+                {
+                    miSetValues.Visible = true;
+                    miSetValues.Enabled = true;
+                });
 
                 rotatorPanels[rotatorIdx].rotatorConnected = true;
                 if (rotatorIdx == ROTATOR_H)
@@ -269,13 +275,13 @@ namespace EncRotator
             }
         }
 
-        private int aD(int a, int b)
+        private int aD(int target, int start)
         {
-            int r = a - b;
+            int r = target - start;
             if (r > 512)
-                r -= 512;
-            else if (r < -256)
-                r += 512;
+                r -= 1024;
+            else if (r < -512)
+                r += 1024;
             return r;
         }
 
@@ -289,7 +295,7 @@ namespace EncRotator
                 pMap.Invalidate();
             if (targetAngles[rotatorIdx] != currentAngles[rotatorIdx])
             {
-                double d = aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx]);
+                int d = aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx]);
                 int dir = Math.Sign(d);
                 if (rotatorIdx == ROTATOR_H)
                 {
@@ -303,17 +309,26 @@ namespace EncRotator
             }
         }
 
+        private int normAngle(int value)
+        {
+            if (value < 0)
+                value += 1023;
+            if (value > 1023)
+                value -= 1023;
+            return value;
+        }
+
         private int absoluteAngle(int rotatorIdx, int relativeValue)
         {
-            return rotatorIdx == ROTATOR_H?
-                    formState.northAngle + relativeValue - (formState.northAngle + relativeValue > 1023 ? 1023 : 0) :
-                    formState.horizonAngle + (int)((relativeValue - formState.horizonAngle) * (formState.zenithAngle - formState.horizonAngle) / (double)256);
+            return normAngle(rotatorIdx == ROTATOR_H?
+                    formState.northAngle + relativeValue :
+                    formState.horizonAngle + (int)(((double)relativeValue / 256) * aD(formState.zenithAngle, formState.horizonAngle)));
         }
 
         private int relativeAngle(int rotatorIdx, int absoluteValue)
         {
             return rotatorIdx == ROTATOR_H ?
-                    absoluteValue - formState.northAngle + (absoluteValue < formState.northAngle ? 1023 : 0) :
+                    normAngle(absoluteValue - formState.northAngle) :
                     (int)((double)aD(absoluteValue, formState.horizonAngle) / aD(formState.zenithAngle, formState.horizonAngle) * 256);
         }
 
@@ -603,8 +618,8 @@ namespace EncRotator
             if (formState.showCam)
                 showCam();
 
-            //            AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
-            //            AutoUpdater.Start("http://73.ru/apps/AntennaNetRotatorRemote/update.xml");
+         //   AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
+         //   AutoUpdater.Start("http://tnxqso.com/static/files/apps/MoonRotator/update.xml");
         }
 
         private void showCam()
@@ -710,13 +725,9 @@ namespace EncRotator
 
         private void connect()
         {
-            switchWaitCursor(true);
-            for (int idx = 0; idx < 2; idx++)
-            {
-                if (!rotators[idx].connected)
-                    rotators[idx].connect();
-            }
-            switchWaitCursor(false);
+            foreach (RotatorEngine rotator in rotators)
+                if (!rotator.connected)
+                    _ = rotator.connect();
         }
 
         private int getRotatorIndex(Keys keys)
@@ -822,6 +833,16 @@ namespace EncRotator
                 closeCam();
             formState.showCam = cbCam.Checked;
             writeConfig();
+        }
+
+        private void miReset_Click(object sender, EventArgs e)
+        {
+            ToolStripMenuItem mi = (ToolStripMenuItem)sender;
+            int rotatorIdx = mi == miResetAzimuth ? ROTATOR_H : ROTATOR_V;
+            ConnectionSettings connection = formState.connections[rotatorIdx];
+            if (showMessage($"Перегрузить контроллер: {connection.name}?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                connection.jeromeParams.reset();
+
         }
     }
 

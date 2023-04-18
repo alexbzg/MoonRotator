@@ -10,6 +10,8 @@ using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using System.Windows.Forms;
 using AsyncConnectionNS;
+using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
 
 namespace EncRotator
 {
@@ -45,7 +47,7 @@ namespace EncRotator
         }
 
         static internal DeviceTemplate[] TEMPLATES = {
-                    new DeviceTemplate { engineLines = new Dictionary<int, int>{ { -1, 15 }, { 1, 14 } },
+                    new DeviceTemplate { engineLines = new Dictionary<int, int>{ { 1, 15 }, { -1, 14 } },
                                             encoderLines = new int[] { 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 },
                                             limitsLines = new Dictionary<int, int> {  { 1, 21 }, { -1, 20 } },
                                             ledLine = 22
@@ -53,6 +55,7 @@ namespace EncRotator
                     };
 
         DeviceTemplate template;
+        private object controllerStateTimer;
         ConnectionSettings connectionSettings;
         JeromeController controller;
         internal int engineStatus = 0;
@@ -72,6 +75,30 @@ namespace EncRotator
         {
             this.connectionSettings = connectionSettings;
             template = TEMPLATES[connectionSettings.deviceType];
+            //controllerStateTimer = new System.Threading.Timer(delegate { getControllerState(); }, null, 100, 1000);
+        }
+
+        internal async Task getControllerState()
+        {
+            JeromeControllerState controllerState = await connectionSettings.jeromeParams.getState();
+            if (controllerState != null)
+            {
+                encGrayVal = 0;
+                for (int lineNo = 0; lineNo < template.encoderLines.Length; lineNo++)
+                {
+                    if (!controllerState.linesStates[template.encoderLines[lineNo] - 1])
+                    {
+                        encGrayVal |= 1 << lineNo;
+                    }
+                }
+                int val = encGrayVal;
+                for (int mask = val >> 1; mask != 0; mask = mask >> 1)
+                {
+                    val ^= mask;
+                }
+                currentAngle = val;
+                onAngleRead?.Invoke(this, new AngleReadEventArgs { angle = currentAngle });
+            }
         }
 
         private void setLine(int line, int mode)
@@ -131,12 +158,12 @@ namespace EncRotator
             }
         }
 
-        internal void connect()
+        internal async Task connect()
         {
             controller = JeromeController.create(connectionSettings.jeromeParams);
             if (controller != null)
             {
-                if (controller.connect())
+                if (await controller.connect())
                 {
                     controller.lineStateChanged += lineStateChanged;
                     controller.onDisconnected += controllerDisconnected;
@@ -152,7 +179,7 @@ namespace EncRotator
 
                     onConnected?.Invoke(this, new ConnectionEventArgs { success = true });
 
-                    readAngle();
+                    _ = readAngle();
                 }
                 else
                 {
@@ -169,9 +196,9 @@ namespace EncRotator
             onDisconnected?.Invoke(this, e);
         }
 
-        internal void readAngle()
+        internal async Task readAngle()
         {
-            string lines = controller?.readlines();
+            string lines = await controller?.readlines();
             if (lines?.Length == 22)
             {
                 encGrayVal = 0;
