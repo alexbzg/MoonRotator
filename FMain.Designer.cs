@@ -42,13 +42,13 @@
             this.ddSettings = new System.Windows.Forms.ToolStripDropDownButton();
             this.miConnect = new System.Windows.Forms.ToolStripMenuItem();
             this.miDisconnect = new System.Windows.Forms.ToolStripMenuItem();
-            this.bStop = new System.Windows.Forms.Button();
-            this.rotatorPanelH = new EncRotator.RotatorPanel();
-            this.rotatorPanelV = new EncRotator.RotatorPanel();
-            this.cbCam = new System.Windows.Forms.CheckBox();
             this.miReset = new System.Windows.Forms.ToolStripMenuItem();
             this.miResetAzimuth = new System.Windows.Forms.ToolStripMenuItem();
             this.miResetElevation = new System.Windows.Forms.ToolStripMenuItem();
+            this.bStop = new System.Windows.Forms.Button();
+            this.cbCam = new System.Windows.Forms.CheckBox();
+            this.rotatorPanelV = new EncRotator.RotatorPanel();
+            this.rotatorPanelH = new EncRotator.RotatorPanel();
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).BeginInit();
             this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
@@ -223,44 +223,6 @@
             this.miDisconnect.Visible = false;
             this.miDisconnect.Click += new System.EventHandler(this.miDisconnect_Click);
             // 
-            // bStop
-            // 
-            this.bStop.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.bStop.Image = global::EncRotator.Properties.Resources.stop;
-            this.bStop.Location = new System.Drawing.Point(324, 480);
-            this.bStop.Name = "bStop";
-            this.bStop.Size = new System.Drawing.Size(60, 60);
-            this.bStop.TabIndex = 22;
-            this.bStop.UseVisualStyleBackColor = true;
-            this.bStop.Click += new System.EventHandler(this.bStop_Click_1);
-            // 
-            // rotatorPanelH
-            // 
-            this.rotatorPanelH.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.rotatorPanelH.Location = new System.Drawing.Point(59, 371);
-            this.rotatorPanelH.Name = "rotatorPanelH";
-            this.rotatorPanelH.Size = new System.Drawing.Size(129, 175);
-            this.rotatorPanelH.TabIndex = 23;
-            // 
-            // rotatorPanelV
-            // 
-            this.rotatorPanelV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.rotatorPanelV.Location = new System.Drawing.Point(194, 371);
-            this.rotatorPanelV.Name = "rotatorPanelV";
-            this.rotatorPanelV.Size = new System.Drawing.Size(129, 175);
-            this.rotatorPanelV.TabIndex = 24;
-            // 
-            // cbCam
-            // 
-            this.cbCam.Appearance = System.Windows.Forms.Appearance.Button;
-            this.cbCam.Image = global::EncRotator.Properties.Resources.moon;
-            this.cbCam.Location = new System.Drawing.Point(0, 480);
-            this.cbCam.Name = "cbCam";
-            this.cbCam.Size = new System.Drawing.Size(60, 60);
-            this.cbCam.TabIndex = 25;
-            this.cbCam.UseVisualStyleBackColor = true;
-            this.cbCam.CheckedChanged += new System.EventHandler(this.cbCam_CheckedChanged);
-            // 
             // miReset
             // 
             this.miReset.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -282,6 +244,46 @@
             this.miResetElevation.Name = "miResetElevation";
             this.miResetElevation.Size = new System.Drawing.Size(180, 34);
             this.miResetElevation.Text = "Элевация";
+            this.miResetElevation.Click += new System.EventHandler(this.miReset_Click);
+            // 
+            // bStop
+            // 
+            this.bStop.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.bStop.Image = global::EncRotator.Properties.Resources.stop;
+            this.bStop.Location = new System.Drawing.Point(324, 480);
+            this.bStop.Name = "bStop";
+            this.bStop.Size = new System.Drawing.Size(60, 60);
+            this.bStop.TabIndex = 22;
+            this.bStop.UseVisualStyleBackColor = true;
+            this.bStop.Click += new System.EventHandler(this.bStop_Click_1);
+            // 
+            // cbCam
+            // 
+            this.cbCam.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbCam.Appearance = System.Windows.Forms.Appearance.Button;
+            this.cbCam.Image = global::EncRotator.Properties.Resources.moon;
+            this.cbCam.Location = new System.Drawing.Point(0, 480);
+            this.cbCam.Name = "cbCam";
+            this.cbCam.Size = new System.Drawing.Size(60, 60);
+            this.cbCam.TabIndex = 25;
+            this.cbCam.UseVisualStyleBackColor = true;
+            this.cbCam.CheckedChanged += new System.EventHandler(this.cbCam_CheckedChanged);
+            // 
+            // rotatorPanelV
+            // 
+            this.rotatorPanelV.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.rotatorPanelV.Location = new System.Drawing.Point(194, 371);
+            this.rotatorPanelV.Name = "rotatorPanelV";
+            this.rotatorPanelV.Size = new System.Drawing.Size(129, 175);
+            this.rotatorPanelV.TabIndex = 24;
+            // 
+            // rotatorPanelH
+            // 
+            this.rotatorPanelH.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.rotatorPanelH.Location = new System.Drawing.Point(59, 371);
+            this.rotatorPanelH.Name = "rotatorPanelH";
+            this.rotatorPanelH.Size = new System.Drawing.Size(129, 175);
+            this.rotatorPanelH.TabIndex = 23;
             // 
             // fMain
             // 

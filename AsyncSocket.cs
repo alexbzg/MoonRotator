@@ -44,6 +44,7 @@ namespace AsyncConnectionNS
 
     public class AsyncConnection
     {
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         private static int timeout = 10000;
 
@@ -92,13 +93,16 @@ namespace AsyncConnectionNS
             _host = host;
             _port = port;
             // Connect to a remote device.
+            logger.WithProperties(new KeyValuePair<string, object>[] {
+                new KeyValuePair<string, object>("host", host),
+                new KeyValuePair<string, object>("port", port.ToString())});
             try
             {
                 int retryCo = 0;
 
                 while ((socket == null || !socket.Connected) && retryCo++ < 3)
                 {
-                    System.Diagnostics.Debug.WriteLine("Connecting...");
+                    logger.Debug($"{_host}:{_port} Connecting to...");
                     // Create a TCP/IP socket.
                     socket = new Socket(AddressFamily.InterNetwork,
                         SocketType.Stream, ProtocolType.Tcp);
@@ -111,18 +115,18 @@ namespace AsyncConnectionNS
                     if (socket != null && !socket.Connected)
                     {
                         socket.Close();
-                        System.Diagnostics.Debug.WriteLine("Timeout");
+                        logger.Debug("Timeout");
                     }
                     else
                         receive();
                 }
                 if (socket == null || !socket.Connected)
-                    System.Diagnostics.Debug.WriteLine("Retries limit reached. Connect failed");
+                    logger.Debug($"{_host}:{_port} Retries limit reached. Connect failed");
                 return (socket != null && socket.Connected);
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                logger.Debug(e.ToString());
                 return false;
             }
         }
@@ -134,7 +138,7 @@ namespace AsyncConnectionNS
 
         private void _disconnect(bool requested)
         {
-            System.Diagnostics.Debug.WriteLine("disconnect");
+            logger.Debug($"{_host}:{_port} disconnect");
             receiveDone.Set();
             if (socket != null && socket.Connected)
                 socket.Close();
@@ -149,7 +153,7 @@ namespace AsyncConnectionNS
                 {
                     socket.EndConnect(ar);
 
-                    System.Diagnostics.Debug.WriteLine("Socket connected to " +
+                    logger.Debug("Socket connected to " +
                         socket.RemoteEndPoint.ToString());
 
                     // Signal that the connection has been made.
@@ -158,7 +162,7 @@ namespace AsyncConnectionNS
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                logger.Debug(e.ToString());
             }
         }
 
@@ -166,7 +170,7 @@ namespace AsyncConnectionNS
         {
             try
             {
-                //System.Diagnostics.Debug.WriteLine("receiving");
+                //logger.Debug("receiving");
                 // Create the state object.
                 StateObject state = new StateObject();
 
@@ -176,7 +180,7 @@ namespace AsyncConnectionNS
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                logger.Debug(e.ToString());
             }
         }
 
@@ -184,7 +188,7 @@ namespace AsyncConnectionNS
         {
             try
             {
-                //System.Diagnostics.Debug.WriteLine("receive callback");
+                //logger.Debug("receive callback");
                 // Retrieve the state object and the client socket 
                 // from the asynchronous state object.
                 StateObject state = (StateObject)ar.AsyncState;
@@ -209,7 +213,7 @@ namespace AsyncConnectionNS
                                 state.sb.Append(ch);
                                 if (ch.Equals("\n"))
                                 {
-                                    //System.Diagnostics.Debug.WriteLine("received: " + state.sb.ToString());
+                                    //logger.Debug("received: " + state.sb.ToString());
                                     processReply(state.sb.ToString());
                                     state.sb.Clear();
                                 }
@@ -224,13 +228,13 @@ namespace AsyncConnectionNS
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                logger.Debug(e.ToString());
             }
         }
 
         private void processReply(string reply)
         {
-            //System.Diagnostics.Debug.WriteLine(reply);
+            logger.Debug($"{_host}:{_port} reply: {reply}");
             lineReceived?.Invoke(this, new LineReceivedEventArgs { line = reply });
         }
 
@@ -245,7 +249,7 @@ namespace AsyncConnectionNS
         {
             if (socket != null && socket.Connected)
             {
-                //Debug.WriteLine("sending: " + data);
+                logger.Debug($"{_host}:{_port} send: {data}");
                 // Convert the string data to byte data using ASCII encoding.
                 byte[] byteData = Encoding.ASCII.GetBytes(data);
 
@@ -276,7 +280,7 @@ namespace AsyncConnectionNS
             }
             catch (Exception e)
             {
-                System.Diagnostics.Debug.WriteLine(e.ToString());
+                logger.Debug(e.ToString());
             }
         }
 

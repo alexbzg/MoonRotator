@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using AsyncConnectionNS;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using static System.Net.WebRequestMethods;
 using Microsoft.VisualStudio.Threading;
+using TcpConnectionNS;
+
 
 namespace Jerome
 {
@@ -24,10 +22,12 @@ namespace Jerome
         public int state;
     }
 
-    public class JeromeController
+    public class JeromeController : IDisposable
     {
-        const int LINE_IN = 1;
-        const int LINE_OUT = 2;
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        public const int LINE_IN = 1;
+        public const int LINE_OUT = 2;
         class CmdEntry
         {
             public string cmd;
@@ -45,58 +45,24 @@ namespace Jerome
         private object cmdQueeLock = new object();
         private List<CmdEntry> cmdQuee = new List<CmdEntry>();
 
-
-
         private const int TIMEOUT = 10000;
-        private static TimeSpan TIMEOUT_SPAN = new TimeSpan(TIMEOUT);
-        private const int PING_INTERVAL = 20000;
         private static Regex rEVT = new Regex(@"#EVT,IN,\d+,(\d+),(\d)");
-        private System.Threading.Timer replyTimer;
+        private Timer replyTimer;
 
         // ManualResetEvent instances signal completion.
 
-        private IPEndPoint remoteEP;
-        private string password;
-        private AsyncConnection connection;
-        private AsyncConnection usartConnection;
-
-        public event EventHandler<DisconnectEventArgs> onDisconnected {
-            add { connection.disconnected += value; }
-            remove { connection.disconnected -= value; }
-        }
+        public event EventHandler<DisconnectEventArgs> onDisconnected;
         public event EventHandler<LineStateChangedEventArgs> lineStateChanged;
-        public event EventHandler<LineReceivedEventArgs> usartLineReceived
-        {
-            add { usartConnection.lineReceived += value; }
-            remove { usartConnection.lineReceived -= value; }
-        }
-        public event EventHandler<BytesReceivedEventArgs> usartBytesReceived
-        {
-            add { usartConnection.bytesReceived += value; }
-            remove { usartConnection.bytesReceived -= value; }
-        }
 
         public JeromeConnectionParams connectionParams;
+        private TcpConnection _connection;
 
         public bool connected
         {
             get
             {
-                return connection != null && connection.connected;
+                return _connection != null && _connection.connected;
             }
-        }
-
-        public bool usartConnected {
-            get
-            {
-                return usartConnection != null && usartConnection.connected;
-            }
-        }
-
-        public bool usartBinaryMode
-        {
-            get { return usartConnection.binaryMode; }
-            set { usartConnection.binaryMode = value; }
         }
 
         
@@ -106,8 +72,6 @@ namespace Jerome
             if (IPAddress.TryParse(p.host, out hostIP))
             {
                 JeromeController jc = new JeromeController();
-                jc.remoteEP = new IPEndPoint(hostIP, p.port);
-                jc.password = p.password;
                 jc.connectionParams = p;
                 return jc;
             }
@@ -141,9 +105,23 @@ namespace Jerome
                 if (!string.IsNullOrEmpty(currentCmd.cmd)) {
                     cmd += $",{currentCmd.cmd}";
                 }
-                connection.sendCommand(cmd);
+                _sendCommand(cmd);
                 replyTimer = new Timer( obj => replyTimeout(), null, TIMEOUT, Timeout.Infinite);
             }
+        }
+
+        private void _sendCommand(string cmd)
+        {
+            _ = Task.Run(async () => {
+                try
+                {
+                    await _connection.sendCommand(cmd);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"{connectionParams.name} command {cmd} send exception");
+                }
+            });
         }
 
         private async void ping()
@@ -161,42 +139,27 @@ namespace Jerome
                 result = r;
                 reDone.Set();
             });
-            await reDone.WaitAsync().WithTimeout(TIMEOUT_SPAN);
+            await reDone.WaitAsync();
             return result;
         }
-
 
 
         public async Task<bool> connect()
         {
             bool result = false;
-            AsyncManualResetEvent reConnect = new AsyncManualResetEvent();
-
-            await Task.Run(() =>
+            _connection = new TcpConnection(connectionParams.host, connectionParams.port);            
+            if (await _connection.connect())
             {
-                connection = new AsyncConnection();
-                connection.connect(connectionParams.host, connectionParams.port);
-                if (connection.connected)
-                {
-                    connection.lineReceived += processReply;
-                    _ = sendCommand("PSW,SET," + connectionParams.password);
-                    _ = sendCommand("EVT,ON");
-                    if (connectionParams.usartPort != -1)
-                    {
-                        usartConnection = new AsyncConnection();
-                        usartConnection.connect(connectionParams.host, connectionParams.usartPort);
-                    }
-                    result = true;
-                }
-                reConnect.Set();
-            });
-            await reConnect.WaitAsync().WithTimeout(TIMEOUT_SPAN);
+                _connection.lineReceived += lineReceived;
+                await sendCommand("PSW,SET," + connectionParams.password);
+                await sendCommand("EVT,ON");
+                result = true;
+                logger.Debug($"{connectionParams.name} connected");
+            } else
+            {
+                logger.Debug($"{connectionParams.name} connection failed");
+            }
             return result;
-        }
-
-        private void UsartConnection_lineReceived(object sender, LineReceivedEventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         public void disconnect()
@@ -208,51 +171,59 @@ namespace Jerome
 
         private void _disconnect(bool requested)
         {
-            System.Diagnostics.Debug.WriteLine("disconnect");
+            logger.Debug($"{connectionParams.name} disconnect (requested: {requested})");
             if (connected)
-                connection.disconnect();
-            if (usartConnected)
-                usartConnection.disconnect();
+                _connection.Close();
+            _connection = null;
+            onDisconnected?.Invoke(this, new DisconnectEventArgs() { requested = requested });
         }
 
 
-        private void processReply(object sender, LineReceivedEventArgs e )
+        private void lineReceived(object sender, LineReceivedEventArgs e )
         {
             string reply = e.line;
-            System.Diagnostics.Debug.WriteLine(reply);
             Match match = rEVT.Match(reply);
             if (match.Success)
             {
                 int line = Convert.ToInt16( match.Groups[1].Value );
                 int lineState = match.Groups[2].Value == "0" ? 0 : 1;
-                Task.Factory.StartNew( () =>
-                    lineStateChanged?.Invoke(this, new LineStateChangedEventArgs { line = line, state = lineState } ) );
+                logger.Debug($"{connectionParams.name} event notification: {reply}");
+                //Task.Factory.StartNew( () =>
+                //    lineStateChanged?.Invoke(this, new LineStateChangedEventArgs { line = line, state = lineState } ) );
             }
             else if ( !reply.StartsWith( "#SLINF" ) && !reply.Contains( "FLAGS" ) && !reply.Contains( "JConfig" ) )
             {
-                replyTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-                if (currentCmd != null && currentCmd.cb != null)
+                replyTimer?.Change(Timeout.Infinite, Timeout.Infinite);                
+                if (currentCmd?.cb != null)
                 {
-                    Action<string> cb = currentCmd.cb;
-                    Task.Run( () => cb.Invoke(reply) );
+                    Action<string> callback = currentCmd.cb;
+                    _ = Task.Run(() => {
+                        try
+                        {
+                            callback.Invoke(reply);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, $"{connectionParams.name} command {currentCmd.cmd} reply {reply} callback exception");
+                        }
+                    });
                 }
                 lock (cmdQuee)
                 {
                     currentCmd = null;
                 }
                 processQuee();
-
             }
         }
 
-        public void setLineMode(int line, int mode)
+        public async Task setLineMode(int line, int mode)
         {
-            sendCommand("IO,SET," + line.ToString() + "," + mode.ToString());
+            await sendCommand($"IO,SET,{line},{mode}");
         }
 
-        public void switchLine(int line, int state)
+        public async Task switchLine(int line, int state)
         {
-            sendCommand("WR," + line.ToString() + "," + state.ToString());
+            await sendCommand($"WR,{line},{state}");
         }
 
         public async Task<string> readlines()
@@ -262,16 +233,17 @@ namespace Jerome
             return reply.Substring(split + 1).TrimEnd('\r', '\n');
         }
 
-
-
         private void replyTimeout()
         {
-            System.Diagnostics.Debug.WriteLine("Reply timeout");
+            logger.Debug($"{connectionParams.name} reply timeout");
             _disconnect(false);
         }
 
-
-
+        public void Dispose()
+        {
+            disconnect();
+            replyTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
     }
 
     public class JeromeConnectionParams
@@ -285,7 +257,7 @@ namespace Jerome
         public string password = "Jerome";
         public int httpPort = 80;
 
-        public async Task<HttpWebResponse> request(string path, string query = "", bool discard = true, bool reset = false)
+        public async Task<HttpWebResponse> request(string path, string query = "", bool discard = true)
         {
             if (string.IsNullOrEmpty(host) || httpPort == 0)
                 return null;
@@ -297,13 +269,7 @@ namespace Jerome
             }
             try { 
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Headers.Add("Authorization", "Basic " + authHeader);
-                if (reset)
-                {
-                    _ = request.GetResponseAsync();
-                    return null;
-                }
-                HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync();
+                HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync().WithTimeout(new TimeSpan(10000));
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     if (!discard)
@@ -326,19 +292,19 @@ namespace Jerome
             return null;
         }
 
-        public void toggleLineType(int lineNo)
+        public async Task toggleLineType(int lineNo)
         {
-            request("server.cgi", $"data=SIO,{lineNo}");
+            await request("server.cgi", $"data=SIO,{lineNo}");
         }
 
-        public void toggleLineState(int lineNo)
+        public async Task toggleLineState(int lineNo)
         {
-            request("server.cgi", $"data=OUT,{lineNo},undefined");
+            await request("server.cgi", $"data=OUT,{lineNo},undefined");
         }
 
-        public void reset()
+        public async Task reset()
         {
-            request("server.cgi", "data=RST", reset: true);
+            await request("server.cgi", "data=RST");
         }
 
         public async Task<JeromeControllerState> getState()

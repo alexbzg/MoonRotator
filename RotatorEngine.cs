@@ -1,20 +1,13 @@
-﻿using EncRotator.Properties;
-using Jerome;
+﻿using Jerome;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
-using System.Windows.Forms;
-using AsyncConnectionNS;
-using System.Windows.Media.Imaging;
+using TcpConnectionNS;
 using System.Threading.Tasks;
 
 namespace EncRotator
 {
+
     internal class DeviceTemplate
     {
         internal Dictionary<int, int> engineLines;
@@ -36,6 +29,7 @@ namespace EncRotator
 
     internal class RotatorEngine
     {
+        private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
         internal static int angleDistance(int a, int b)
         {
             int r = a - b;
@@ -101,46 +95,46 @@ namespace EncRotator
             }
         }
 
-        private void setLine(int line, int mode)
+        private async Task setLine(int line, int mode)
         {
             if (controller != null && controller.connected)
-                controller.setLineMode(line, mode);
+                await controller.setLineMode(line, mode);
         }
 
-        private void toggleLine(int line, int state)
+        private async Task toggleLine(int line, int state)
         {
             if (controller != null && controller.connected)
-                controller.switchLine(line, state);
+                await controller.switchLine(line, state);
         }
 
-        public void on(int val)
+        public async Task on(int val)
         {
-            Debug.WriteLine($"Engine: {val}");
+            logger.Debug($"Engine: {val}");
             if (controller != null && controller.connected && val != engineStatus && (limitReached == 0 || limitReached != val))
             {
                 if (val == 0 || engineStatus != 0)
                 {
                     int prevDir = engineStatus;
-                    toggleLine(template.engineLines[prevDir], 0);
+                    await toggleLine(template.engineLines[prevDir], 0);
                 }
                 if (val != 0)
                 {
-                    toggleLine(template.engineLines[val], 1);
+                    await toggleLine(template.engineLines[val], 1);
                 }
                 engineStatus = val;
             }
         }
 
 
-        internal void disconnect()
+        internal async Task disconnect()
         {
             if (controller != null && controller.connected)
             {
                 if (engineStatus != 0)
                 {
-                    on(0);
+                    await on(0);
                 }
-                toggleLine(template.ledLine, 0);
+                await toggleLine(template.ledLine, 0);
                 controller.disconnect();
             }
         }
@@ -168,14 +162,14 @@ namespace EncRotator
                     controller.lineStateChanged += lineStateChanged;
                     controller.onDisconnected += controllerDisconnected;
 
-                    setLine(template.ledLine, 0);
+                    await setLine(template.ledLine, JeromeController.LINE_OUT);
                     foreach (int line in template.engineLines.Values)
                     {
-                        setLine(line, 0);
-                        toggleLine(line, 0);
+                        await setLine(line, JeromeController.LINE_OUT);
+                        await toggleLine(line, 0);
                     }
                     foreach (int line in template.encoderLines)
-                        setLine(line, 1);
+                        await setLine(line, JeromeController.LINE_IN);
 
                     onConnected?.Invoke(this, new ConnectionEventArgs { success = true });
 
@@ -198,6 +192,7 @@ namespace EncRotator
 
         internal async Task readAngle()
         {
+            logger.Debug($"{connectionSettings.name} Sending readlines query");
             string lines = await controller?.readlines();
             if (lines?.Length == 22)
             {

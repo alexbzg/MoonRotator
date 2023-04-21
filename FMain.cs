@@ -6,13 +6,13 @@ using System.Windows.Forms;
 using System.IO;
 using System.Xml.Serialization;
 using Jerome;
-using AsyncConnectionNS;
+using TcpConnectionNS;
 using System.Threading;
 using FFMpegUtils;
 using InputBox;
 using System.Globalization;
-using System.Windows.Media.Imaging;
 using System.Threading.Tasks;
+using NLog;
 
 namespace EncRotator
 {
@@ -29,6 +29,7 @@ namespace EncRotator
 
         internal const int ROTATOR_H = 0;
         internal const int ROTATOR_V = 1;
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
         internal bool editConnectionGroup(ConnectionSettings connectionSettings)
         {
@@ -64,6 +65,12 @@ namespace EncRotator
         public fMain(string[] args)
         {
             InitializeComponent();
+
+#if DEBUG
+            logger.Info("start");
+            LogManager.Flush();
+#endif           
+
             Application.AddMessageFilter(this);
             rotateKeys = new Dictionary<Keys, int>[]
                 {
@@ -120,19 +127,19 @@ namespace EncRotator
 
         }
 
-        private void rotateToTargetClick(object sender, RotateToTargetClickEventArgs e)
+        private async void rotateToTargetClick(object sender, RotateToTargetClickEventArgs e)
         {
-            rotateToAngle(e.rotatorIdx, e.target);
+            await rotateToAngle(e.rotatorIdx, e.target);
         }
 
-        private void rotateButtonMouseUp(object sender, RotatorPanelEventArgs e)
+        private async void rotateButtonMouseUp(object sender, RotatorPanelEventArgs e)
         {
-            rotators[e.rotatorIdx].on(0);
+            await rotators[e.rotatorIdx].on(0);
         }
 
-        private void rotateButtonMouseDown(object sender, RotateButtonMouseDownEventArgs e)
+        private async void rotateButtonMouseDown(object sender, RotateButtonMouseDownEventArgs e)
         {
-            rotators[e.rotatorIdx].on(e.dir);
+            await rotators[e.rotatorIdx].on(e.dir);
         }
 
         private void setCurrentMap(int val)
@@ -154,7 +161,7 @@ namespace EncRotator
             {
                 rotator.onDisconnected += rotatorDisconnected;
                 rotator.onAngleRead += rotatorAngleRead;
-                readAngleTimers[rotatorIdx] = new System.Threading.Timer(delegate { rotator.readAngle(); }, null, 100, 1000);
+                readAngleTimers[rotatorIdx] = new System.Threading.Timer(async delegate { await rotator.readAngle(); }, null, 100, 1000);
 
                 timer.Enabled = true;
 
@@ -216,13 +223,13 @@ namespace EncRotator
             return Array.IndexOf(rotators, rotator);
         }
 
-        private void rotatorDisconnected(object sender, DisconnectEventArgs e)
+        private async void rotatorDisconnected(object sender, DisconnectEventArgs e)
         {
+            RotatorEngine rotator = (RotatorEngine)sender;
+            int rotatorIdx = getRotatorIndex(rotator);
+            await formState.connections[rotatorIdx].jeromeParams.reset();
+    
             if (!closingFl) {
-
-                RotatorEngine rotator = (RotatorEngine)sender;
-                int rotatorIdx = getRotatorIndex(rotator);
-
                 readAngleTimers[rotatorIdx]?.Change(Timeout.Infinite, Timeout.Infinite);
                 readAngleTimers[rotatorIdx]?.Dispose(); 
                 readAngleTimers[rotatorIdx] = null;
@@ -270,7 +277,7 @@ namespace EncRotator
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine("Error loading config: " + ex.ToString());
+                    logger.Error("Error loading config: " + ex.ToString());
                 }
             }
         }
@@ -285,7 +292,7 @@ namespace EncRotator
             return r;
         }
 
-        private void rotateToAngle(int rotatorIdx, int angle)
+        private async Task rotateToAngle(int rotatorIdx, int angle)
         {
             if (!angleValuesSet(rotatorIdx) || !rotators[rotatorIdx].connected)
                 return;
@@ -305,7 +312,7 @@ namespace EncRotator
                         dir = -dir;
                     }
                 }
-                rotators[rotatorIdx].on(dir);
+                await rotators[rotatorIdx].on(dir);
             }
         }
 
@@ -342,7 +349,7 @@ namespace EncRotator
             rotatorPanelH.warning = Math.Abs(formState.coils) > 1 ? "Перехлест" : "";
         }
 
-        private void rotatorAngleRead(Object sender, AngleReadEventArgs e)
+        private async void rotatorAngleRead(Object sender, AngleReadEventArgs e)
         {
             RotatorEngine rotator = (RotatorEngine) sender;
             int rotatorIdx = getRotatorIndex(rotator);
@@ -371,7 +378,7 @@ namespace EncRotator
                     int tD = aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx]);
                     if (Math.Abs(tD) < 2)
                     {
-                        rotator.on(0);
+                        await rotator.on(0);
                         targetAngles[rotatorIdx] = -1;
                         if (rotatorIdx == ROTATOR_H)
                             pMap.Invalidate();
@@ -381,7 +388,7 @@ namespace EncRotator
                 //stop if vertical and getting out of bounds
                 if (rotatorIdx == ROTATOR_V && angleValuesSet(ROTATOR_V) && ((Math.Abs(aD(formState.zenithAngle, currentAngles[ROTATOR_V])) < 2 && rotator.engineStatus == rotatorVSign()) ||
                         (Math.Abs(aD(formState.horizonAngle, currentAngles[ROTATOR_V])) < 2 && rotator.engineStatus == -rotatorVSign())))
-                    rotator.on(0);
+                    await rotator.on(0);
                 
                 //show current angle
                 int displayAngle = currentAngles[rotatorIdx];
@@ -540,7 +547,7 @@ namespace EncRotator
         private void disconnect()
         {
             foreach (RotatorEngine rotator in rotators)
-                rotator.disconnect();
+                _ = rotator.disconnect();
         }
 
         public bool editConnection(ConnectionSettings conn)
@@ -582,7 +589,7 @@ namespace EncRotator
         private void bStop_Click(object sender, EventArgs e)
         {
             foreach (RotatorEngine rotator in rotators)
-                rotator.on(0);
+                _ = rotator.on(0);
         }
 
 
@@ -688,7 +695,7 @@ namespace EncRotator
                 if (rotateKeyDown == -1 && !waitCursor)
                 {
                     int rotatorIdx = getRotatorIndex(keyData);
-                    rotators[rotatorIdx].on(rotateKeys[rotatorIdx][keyData]);
+                    _ = rotators[rotatorIdx].on(rotateKeys[rotatorIdx][keyData]);
                     rotateKeyDown = rotatorIdx;
                 }
                 return true;
@@ -712,7 +719,7 @@ namespace EncRotator
         {
             if (m.Msg == WM_KEYUP && rotateKeyDown != -1)
             {
-                rotators[rotateKeyDown].on(0);
+                _ = rotators[rotateKeyDown].on(0);
                 rotateKeyDown = -1;
             }
             return false;
@@ -738,7 +745,7 @@ namespace EncRotator
         private void bStop_Click_1(object sender, EventArgs e)
         {
             foreach (RotatorEngine rotator in rotators)
-                rotator.on(0);
+                _ = rotator.on(0);
         }
 
         private void miSetValueClick(object sender, EventArgs e)
@@ -835,14 +842,24 @@ namespace EncRotator
             writeConfig();
         }
 
-        private void miReset_Click(object sender, EventArgs e)
+        private async void miReset_Click(object sender, EventArgs e)
         {
             ToolStripMenuItem mi = (ToolStripMenuItem)sender;
             int rotatorIdx = mi == miResetAzimuth ? ROTATOR_H : ROTATOR_V;
             ConnectionSettings connection = formState.connections[rotatorIdx];
             if (showMessage($"Перегрузить контроллер: {connection.name}?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                connection.jeromeParams.reset();
-
+            {
+                RotatorEngine rotator = rotators[rotatorIdx];
+                bool connected = rotator.connected;
+                if (connected)
+                    await rotator.disconnect();
+                await connection.jeromeParams.reset();
+                if (connected)
+                {
+                    await Task.Delay(1000);
+                    await rotator.connect();
+                }
+            }
         }
     }
 
