@@ -909,10 +909,12 @@ namespace EncRotator
                 }
                 if (success)
                 {
-                    if (formState.follow && formState.lat == 256)
+                    if (miFollow.Checked && formState.lat == 256)
                     {
-                        formState.follow = false;
+                        miFollow.Checked = false;
+                        updateFollow();
                     }
+                    updateMenu();
                     writeConfig();
                 }
                 else
