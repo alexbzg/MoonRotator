@@ -929,13 +929,16 @@ namespace EncRotator
             MoonPosition moonPosition = MoonCalc.GetMoonPosition(DateTime.UtcNow, formState.lat, formState.lng);
             if (moonPosition.Altitude > 0)
             {
-                double azimuth = moonPosition.Azimuth >= 0 ? moonPosition.Azimuth : 360 + moonPosition.Azimuth;
-                await rotateToAngle(ROTATOR_V, RotatorEngine.degreeToEncoder(moonPosition.Altitude));
-                await rotateToAngle(ROTATOR_H, RotatorEngine.degreeToEncoder(azimuth));
+                int azimuth = RotatorEngine.radToEncoder(moonPosition.Azimuth + Math.PI);
+                if (azimuth < 0)
+                    azimuth += 1024;
+                int elevation = RotatorEngine.radToEncoder(moonPosition.Altitude);
+                await rotateToAngle(ROTATOR_V, elevation);
+                await rotateToAngle(ROTATOR_H, azimuth);
                 Invoke((MethodInvoker)delegate
                 {
-                    rotatorPanelH.setTargetAngleDegrees(azimuth);
-                    rotatorPanelV.setTargetAngleDegrees(moonPosition.Altitude);
+                    rotatorPanelH.targetAngle = azimuth;
+                    rotatorPanelV.targetAngle = elevation;
                 });
             } else
             {

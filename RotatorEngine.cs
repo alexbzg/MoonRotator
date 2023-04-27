@@ -32,6 +32,12 @@ namespace EncRotator
         {
             return (int)(value * 2.84166);
         }
+
+        public static int radToEncoder(double value)
+        {
+            return (int)(value * 162.974661726);
+        }
+
         internal static int angleDistance(int a, int b)
         {
             int r = a - b;
