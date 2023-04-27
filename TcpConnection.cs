@@ -33,6 +33,7 @@ namespace TcpConnectionNS
         public bool connected { get { return _client != null && _client.Connected; } }
 
         public event EventHandler<LineReceivedEventArgs> lineReceived;
+        public event EventHandler<DisconnectEventArgs> disconnected;
 
         public TcpConnection(string host, int port)
         {
@@ -70,8 +71,8 @@ namespace TcpConnectionNS
                 await _stream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
                 logger.Debug($"{_host}:{_port} send: {message}");
             } catch (Exception ex) {
-                logger.Error(ex, $"{_host}:{_port} write exception");
-                throw;
+                logger.Error(ex, $"{_host}:{_port} write exception\n");
+                disconnected?.Invoke(this, new DisconnectEventArgs() { requested = false });
             }
         }
 
@@ -84,6 +85,7 @@ namespace TcpConnectionNS
         {
             logger.Debug($"{_host}:{_port} receiving...");
             byte[] buffer = new byte[1024];
+            bool disconnectRequested = false;
             StringBuilder stringRead =  new StringBuilder();
             try
             {
@@ -120,6 +122,7 @@ namespace TcpConnectionNS
                     _stream.Close();
                 }
                 logger.Debug($"{_host}:{_port} disconnected by request");
+                disconnectRequested = true;
             }
             catch (Exception ex)
             {
@@ -127,8 +130,9 @@ namespace TcpConnectionNS
                 {
                     _stream.Close();
                 }
-                logger.Error(ex, $"{_host}:{_port} read exception");
+                logger.Error(ex, $"{_host}:{_port} read exception\n");
             }
+            invokeDisconnected(disconnectRequested);
         }
 
         private void invokeLineReceived(string line)
@@ -140,16 +144,31 @@ namespace TcpConnectionNS
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, $"{_host}:{_port} lineReceived handler exception");
+                    logger.Error(ex, $"{_host}:{_port} lineReceived handler exception\n");
                 }
             });
         }
 
+        private void invokeDisconnected(bool requested)
+        {
+            _ = Task.Run(() => {
+                try
+                {
+                    disconnected?.Invoke(this, new DisconnectEventArgs() { requested = requested });
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"{_host}:{_port} disconnected handler exception\n");
+                }
+            });
+        }
+
+
         public void Close()
         {
             _cts.Cancel();
-            _receiveTask.Wait();
-            _client.Close();
+            _receiveTask?.Wait();
+            _client?.Close();
             _stream = null;
             _receiveTask = null;
         }

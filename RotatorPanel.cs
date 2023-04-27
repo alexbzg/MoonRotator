@@ -53,8 +53,13 @@ namespace EncRotator
         }
         internal int targetAngle
         {
-            get { return (int)((double)nTargetAngle.Value * 2.84166); }
+            get { return RotatorEngine.degreeToEncoder((double)nTargetAngle.Value); }
             set { nTargetAngle.Value = (decimal)angleToDegrees(value); }
+        }
+
+        internal void setTargetAngleDegrees(double value)
+        {
+            nTargetAngle.Value = (decimal)value;
         }
 
         internal string warning

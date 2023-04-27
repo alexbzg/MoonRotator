@@ -34,10 +34,11 @@
             this.miSetAzimuth = new System.Windows.Forms.ToolStripMenuItem();
             this.miSetHorizon = new System.Windows.Forms.ToolStripMenuItem();
             this.miSetZenith = new System.Windows.Forms.ToolStripMenuItem();
+            this.miSetCoordinates = new System.Windows.Forms.ToolStripMenuItem();
             this.miModuleSettings = new System.Windows.Forms.ToolStripMenuItem();
             this.timer = new System.Windows.Forms.Timer(this.components);
             this.pMap = new System.Windows.Forms.PictureBox();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.slMvt = new System.Windows.Forms.ToolStripLabel();
             this.ddSettings = new System.Windows.Forms.ToolStripDropDownButton();
             this.miConnect = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,12 +46,14 @@
             this.miReset = new System.Windows.Forms.ToolStripMenuItem();
             this.miResetAzimuth = new System.Windows.Forms.ToolStripMenuItem();
             this.miResetElevation = new System.Windows.Forms.ToolStripMenuItem();
+            this.miFollow = new System.Windows.Forms.ToolStripMenuItem();
             this.bStop = new System.Windows.Forms.Button();
             this.cbCam = new System.Windows.Forms.CheckBox();
             this.rotatorPanelV = new EncRotator.RotatorPanel();
             this.rotatorPanelH = new EncRotator.RotatorPanel();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).BeginInit();
-            this.toolStrip1.SuspendLayout();
+            this.toolStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // miConnections
@@ -112,32 +115,39 @@
             this.miSetValues.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miSetAzimuth,
             this.miSetHorizon,
-            this.miSetZenith});
+            this.miSetZenith,
+            this.miSetCoordinates});
             this.miSetValues.Name = "miSetValues";
             this.miSetValues.Size = new System.Drawing.Size(291, 34);
             this.miSetValues.Text = "Установить значения";
-            this.miSetValues.Visible = false;
             // 
             // miSetAzimuth
             // 
             this.miSetAzimuth.Name = "miSetAzimuth";
-            this.miSetAzimuth.Size = new System.Drawing.Size(174, 34);
+            this.miSetAzimuth.Size = new System.Drawing.Size(204, 34);
             this.miSetAzimuth.Text = "Азимут";
             this.miSetAzimuth.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetHorizon
             // 
             this.miSetHorizon.Name = "miSetHorizon";
-            this.miSetHorizon.Size = new System.Drawing.Size(174, 34);
+            this.miSetHorizon.Size = new System.Drawing.Size(204, 34);
             this.miSetHorizon.Text = "Горизонт";
             this.miSetHorizon.Click += new System.EventHandler(this.miSetValueClick);
             // 
             // miSetZenith
             // 
             this.miSetZenith.Name = "miSetZenith";
-            this.miSetZenith.Size = new System.Drawing.Size(174, 34);
+            this.miSetZenith.Size = new System.Drawing.Size(204, 34);
             this.miSetZenith.Text = "Зенит";
             this.miSetZenith.Click += new System.EventHandler(this.miSetValueClick);
+            // 
+            // miSetCoordinates
+            // 
+            this.miSetCoordinates.Name = "miSetCoordinates";
+            this.miSetCoordinates.Size = new System.Drawing.Size(204, 34);
+            this.miSetCoordinates.Text = "Координаты";
+            this.miSetCoordinates.Click += new System.EventHandler(this.miSetCoordinates_Click);
             // 
             // miModuleSettings
             // 
@@ -167,17 +177,17 @@
             this.pMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pMap_MouseMove);
             this.pMap.Resize += new System.EventHandler(this.pMap_Resize);
             // 
-            // toolStrip1
+            // toolStrip
             // 
-            this.toolStrip1.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStrip.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.slMvt,
             this.ddSettings});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 0);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(385, 26);
-            this.toolStrip1.TabIndex = 17;
-            this.toolStrip1.Text = "toolStrip1";
+            this.toolStrip.Location = new System.Drawing.Point(0, 0);
+            this.toolStrip.Name = "toolStrip";
+            this.toolStrip.Size = new System.Drawing.Size(385, 26);
+            this.toolStrip.TabIndex = 17;
+            this.toolStrip.Text = "toolStrip1";
             // 
             // slMvt
             // 
@@ -200,7 +210,8 @@
             this.miMaps,
             this.miSetValues,
             this.miModuleSettings,
-            this.miReset});
+            this.miReset,
+            this.miFollow});
             this.ddSettings.ForeColor = System.Drawing.Color.Transparent;
             this.ddSettings.Image = ((System.Drawing.Image)(resources.GetObject("ddSettings.Image")));
             this.ddSettings.ImageTransparentColor = System.Drawing.Color.Black;
@@ -235,16 +246,24 @@
             // miResetAzimuth
             // 
             this.miResetAzimuth.Name = "miResetAzimuth";
-            this.miResetAzimuth.Size = new System.Drawing.Size(180, 34);
+            this.miResetAzimuth.Size = new System.Drawing.Size(179, 34);
             this.miResetAzimuth.Text = "Азимут";
             this.miResetAzimuth.Click += new System.EventHandler(this.miReset_Click);
             // 
             // miResetElevation
             // 
             this.miResetElevation.Name = "miResetElevation";
-            this.miResetElevation.Size = new System.Drawing.Size(180, 34);
+            this.miResetElevation.Size = new System.Drawing.Size(179, 34);
             this.miResetElevation.Text = "Элевация";
             this.miResetElevation.Click += new System.EventHandler(this.miReset_Click);
+            // 
+            // miFollow
+            // 
+            this.miFollow.CheckOnClick = true;
+            this.miFollow.Name = "miFollow";
+            this.miFollow.Size = new System.Drawing.Size(291, 34);
+            this.miFollow.Text = "Следовать за Луной";
+            this.miFollow.Click += new System.EventHandler(this.miFollow_Click);
             // 
             // bStop
             // 
@@ -255,7 +274,7 @@
             this.bStop.Size = new System.Drawing.Size(60, 60);
             this.bStop.TabIndex = 22;
             this.bStop.UseVisualStyleBackColor = true;
-            this.bStop.Click += new System.EventHandler(this.bStop_Click_1);
+            this.bStop.Click += new System.EventHandler(this.bStop_Click);
             // 
             // cbCam
             // 
@@ -294,7 +313,7 @@
             this.Controls.Add(this.rotatorPanelV);
             this.Controls.Add(this.rotatorPanelH);
             this.Controls.Add(this.bStop);
-            this.Controls.Add(this.toolStrip1);
+            this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.pMap);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
@@ -307,8 +326,8 @@
             this.LocationChanged += new System.EventHandler(this.fMain_ResizeEnd);
             this.Resize += new System.EventHandler(this.fMain_Resize);
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).EndInit();
-            this.toolStrip1.ResumeLayout(false);
-            this.toolStrip1.PerformLayout();
+            this.toolStrip.ResumeLayout(false);
+            this.toolStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -325,7 +344,7 @@
         private System.Windows.Forms.ToolStripMenuItem miMaps;
         private System.Windows.Forms.ToolStripMenuItem miMapAdd;
         private System.Windows.Forms.ToolStripMenuItem miMapRemove;
-        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStrip toolStrip;
         private System.Windows.Forms.ToolStripDropDownButton ddSettings;
         private System.Windows.Forms.ToolStripLabel slMvt;
         private System.Windows.Forms.ToolStripMenuItem miHConnection;
@@ -343,6 +362,9 @@
         private System.Windows.Forms.ToolStripMenuItem miReset;
         private System.Windows.Forms.ToolStripMenuItem miResetAzimuth;
         private System.Windows.Forms.ToolStripMenuItem miResetElevation;
+        private System.Windows.Forms.ToolStripMenuItem miSetCoordinates;
+        private System.Windows.Forms.ToolStripMenuItem miFollow;
+        private System.Windows.Forms.ToolTip toolTip;
     }
 }
 

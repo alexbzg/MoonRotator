@@ -120,6 +120,9 @@
     <Reference Include="PrimS.Telnet.NetStandard, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Telnet.0.11.3\lib\net472\PrimS.Telnet.NetStandard.dll</HintPath>
     </Reference>
+    <Reference Include="SunCalcNet, Version=1.2.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SunCalcNet.1.2.2\lib\netstandard2.0\SunCalcNet.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />

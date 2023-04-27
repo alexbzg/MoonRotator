@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TcpConnectionNS;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EncRotator
 {
@@ -16,11 +17,6 @@ namespace EncRotator
         internal int ledLine;
     }
 
-    internal class ConnectionEventArgs : EventArgs
-    {
-        public bool success;
-    }
-
     internal class AngleReadEventArgs : EventArgs
     {
         public int angle;
@@ -29,7 +25,13 @@ namespace EncRotator
 
     internal class RotatorEngine
     {
+        private const int RECONNECT_INTERVAL = 5000;
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+
+        public static int degreeToEncoder(double value) 
+        {
+            return (int)(value * 2.84166);
+        }
         internal static int angleDistance(int a, int b)
         {
             int r = a - b;
@@ -49,7 +51,6 @@ namespace EncRotator
                     };
 
         DeviceTemplate template;
-        private object controllerStateTimer;
         ConnectionSettings connectionSettings;
         JeromeController controller;
         internal int engineStatus = 0;
@@ -57,11 +58,11 @@ namespace EncRotator
         int encGrayVal = -1;
         int currentAngle = -1;
         internal event EventHandler<DisconnectEventArgs> onDisconnected;
-        internal event EventHandler<ConnectionEventArgs> onConnected;
+        internal event EventHandler<ConnectEventArgs> onConnected;
         internal event EventHandler<AngleReadEventArgs> onAngleRead;
         internal bool connected
         {
-            get { return controller?.connected ?? false; }
+            get { return (controller?.connected ?? false); }
         }
 
 
@@ -97,20 +98,20 @@ namespace EncRotator
 
         private async Task setLine(int line, int mode)
         {
-            if (controller != null && controller.connected)
+            if (connected)
                 await controller.setLineMode(line, mode);
         }
 
         private async Task toggleLine(int line, int state)
         {
-            if (controller != null && controller.connected)
+            if (connected)
                 await controller.switchLine(line, state);
         }
 
         public async Task on(int val)
         {
             logger.Debug($"Engine: {val}");
-            if (controller != null && controller.connected && val != engineStatus && (limitReached == 0 || limitReached != val))
+            if (connected && val != engineStatus && (limitReached == 0 || limitReached != val))
             {
                 if (val == 0 || engineStatus != 0)
                 {
@@ -126,9 +127,9 @@ namespace EncRotator
         }
 
 
-        internal async Task disconnect()
+        internal async Task disconnect(bool requested = true)
         {
-            if (controller != null && controller.connected)
+            if (connected)
             {
                 if (engineStatus != 0)
                 {
@@ -154,64 +155,101 @@ namespace EncRotator
 
         internal async Task connect()
         {
-            controller = JeromeController.create(connectionSettings.jeromeParams);
-            if (controller != null)
-            {
-                if (await controller.connect())
+            //disconnecting = false;
+            if (controller == null) {
+                controller = JeromeController.create(connectionSettings.jeromeParams);
+                if (controller != null)
                 {
                     controller.lineStateChanged += lineStateChanged;
                     controller.onDisconnected += controllerDisconnected;
-
-                    await setLine(template.ledLine, JeromeController.LINE_OUT);
-                    foreach (int line in template.engineLines.Values)
-                    {
-                        await setLine(line, JeromeController.LINE_OUT);
-                        await toggleLine(line, 0);
-                    }
-                    foreach (int line in template.encoderLines)
-                        await setLine(line, JeromeController.LINE_IN);
-
-                    onConnected?.Invoke(this, new ConnectionEventArgs { success = true });
-
-                    _ = readAngle();
-                }
-                else
-                {
-                    onConnected?.Invoke(this, new ConnectionEventArgs { success = false });
-                    controller = null;
+                    controller.onConnected += controllerConnected;
+                    controller.reconnectInterval = RECONNECT_INTERVAL;
+                    controller.resetControllerOnDisconnect = true;
                 }
             }
+            if (controller != null)
+                await controller.connect();
+        }
+            
+
+        private async void controllerConnected(object sender, ConnectEventArgs e)
+        {
+            if (e.success) { 
+                await setLine(template.ledLine, JeromeController.LINE_OUT);
+                foreach (int line in template.engineLines.Values)
+                {
+                    await setLine(line, JeromeController.LINE_OUT);
+                    await toggleLine(line, 0);
+                }
+                foreach (int line in template.encoderLines)
+                    await setLine(line, JeromeController.LINE_IN);
+
+            }
+            onConnected?.Invoke(this, e);
+            if (e.success)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await readAngle();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, "angle read task exception \n");
+                        await disconnect(false);
+                    }
+                });
         }
 
         private void controllerDisconnected(object sender, DisconnectEventArgs e)
         {
-            controller.onDisconnected -= controllerDisconnected;
-            controller = null;
-            onDisconnected?.Invoke(this, e);
+            try
+            {
+                onDisconnected?.Invoke(this, e);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"{connectionSettings.name} disconnect callback exception\n");
+            }
         }
 
         internal async Task readAngle()
         {
-            logger.Debug($"{connectionSettings.name} Sending readlines query");
-            string lines = await controller?.readlines();
-            if (lines?.Length == 22)
+            logger.Debug($"{connectionSettings.name} read task started");
+            while (connected)
             {
-                encGrayVal = 0;
-                for (int lineNo = 0; lineNo < template.encoderLines.Length; lineNo++)
+                logger.Debug($"{connectionSettings.name} Sending readlines query");
+                string lines = await controller?.readlines();
+                if (lines?.Length == 22)
                 {
-                    if (lines[template.encoderLines[lineNo] - 1] == '0')
+                    encGrayVal = 0;
+                    for (int lineNo = 0; lineNo < template.encoderLines.Length; lineNo++)
                     {
-                        encGrayVal |= 1 << lineNo;
+                        if (lines[template.encoderLines[lineNo] - 1] == '0')
+                        {
+                            encGrayVal |= 1 << lineNo;
+                        }
                     }
+                    int val = encGrayVal;
+                    for (int mask = val >> 1; mask != 0; mask = mask >> 1)
+                    {
+                        val ^= mask;
+                    }
+                    currentAngle = val;
+                    _ = Task.Run(() => {
+                        try
+                        {
+                            onAngleRead?.Invoke(this, new AngleReadEventArgs { angle = currentAngle });
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, $"{connectionSettings.name} angle read callback exception");
+                        }
+                    });
                 }
-                int val = encGrayVal;
-                for (int mask = val >> 1; mask != 0; mask = mask >> 1)
-                {
-                    val ^= mask;
-                }
-                currentAngle = val;
-                onAngleRead?.Invoke(this, new AngleReadEventArgs { angle = currentAngle });
+                await Task.Delay(1000);
             }
+            logger.Debug($"{connectionSettings.name} read task finished");
         }
 
 

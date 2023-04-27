@@ -13,6 +13,9 @@ using InputBox;
 using System.Globalization;
 using System.Threading.Tasks;
 using NLog;
+using SunCalcNet;
+using NLog.Fluent;
+using SunCalcNet.Model;
 
 namespace EncRotator
 {
@@ -47,11 +50,9 @@ namespace EncRotator
         List<Bitmap> maps = new List<Bitmap>();
         volatile bool waitCursor;
         internal RotatorEngine[] rotators = new RotatorEngine[] { null, null };
-        internal System.Threading.Timer[] readAngleTimers = new System.Threading.Timer[] { null, null };
         Dictionary<Keys, int>[] rotateKeys;
         Dictionary<int, RotatorPanel> rotatorPanels;
         FFPlayWindow camWindow;
-
 
         double mapRatio = 0;
         bool closingFl = false;
@@ -152,7 +153,7 @@ namespace EncRotator
         }
 
 
-        private void rotatorConnected(object sender, ConnectionEventArgs e)
+        private void rotatorConnected(object sender, ConnectEventArgs e)
         {
             RotatorEngine rotator = (RotatorEngine)sender;
             int rotatorIdx = getRotatorIndex(rotator);
@@ -161,22 +162,18 @@ namespace EncRotator
             {
                 rotator.onDisconnected += rotatorDisconnected;
                 rotator.onAngleRead += rotatorAngleRead;
-                readAngleTimers[rotatorIdx] = new System.Threading.Timer(async delegate { await rotator.readAngle(); }, null, 100, 1000);
-
-                timer.Enabled = true;
 
                 Invoke((MethodInvoker)delegate
                 {
-                    miSetValues.Visible = true;
-                    miSetValues.Enabled = true;
+                    timer.Enabled = true;
+                    if (rotatorIdx == ROTATOR_H)
+                    {
+                        setOvercoilCaption();
+                        pMap.Invalidate();
+                    }
                 });
 
                 rotatorPanels[rotatorIdx].rotatorConnected = true;
-                if (rotatorIdx == ROTATOR_H)
-                {
-                    setOvercoilCaption();
-                    pMap.Invalidate();
-                }
             }
             else
             {
@@ -187,12 +184,14 @@ namespace EncRotator
 
         private void updateMenu()
         {
-            Invoke((MethodInvoker)delegate
+            Invoke((MethodInvoker) delegate
             {
                 int connected = rotators.Count(item => item.connected);
                 miConnect.Visible = connected != 2;
+                miFollow.Visible = connected == 2 && formState.lat != 256;
+                if (miFollow.Checked && connected != 2)
+                    updateFollow();
                 miDisconnect.Visible = connected != 0;
-                miSetValues.Visible = connected != 0;
                 miSetAzimuth.Visible = rotators[ROTATOR_H].connected;
                 miSetHorizon.Visible = rotators[ROTATOR_V].connected;
                 miSetZenith.Visible = rotators[ROTATOR_V].connected;
@@ -223,27 +222,26 @@ namespace EncRotator
             return Array.IndexOf(rotators, rotator);
         }
 
-        private async void rotatorDisconnected(object sender, DisconnectEventArgs e)
+        private void rotatorDisconnected(object sender, DisconnectEventArgs e)
         {
             RotatorEngine rotator = (RotatorEngine)sender;
             int rotatorIdx = getRotatorIndex(rotator);
-            await formState.connections[rotatorIdx].jeromeParams.reset();
     
             if (!closingFl) {
-                readAngleTimers[rotatorIdx]?.Change(Timeout.Infinite, Timeout.Infinite);
-                readAngleTimers[rotatorIdx]?.Dispose(); 
-                readAngleTimers[rotatorIdx] = null;
-
                 rotatorPanels[rotatorIdx].rotatorConnected = false;
                 currentAngles[rotatorIdx] = -1;
                 anglesChange[rotatorIdx] = 0;
                 updateMenu();
-                this.Invoke((MethodInvoker)delegate
+                Invoke((MethodInvoker)delegate
                 {
-                    miSetValues.Visible = false;
-                    timer.Enabled = false;
+                    timer.Enabled = rotators[1 - rotatorIdx].connected;
                     if (rotatorIdx == ROTATOR_H)
                         pMap.Invalidate();
+                    if (miFollow.Checked)
+                    {
+                        miFollow.Checked = false;
+                        updateFollow();
+                    }
                 });
             }
         }
@@ -254,7 +252,7 @@ namespace EncRotator
         {
             if (loaded)
             {
-                System.Drawing.Rectangle bounds = this.WindowState != FormWindowState.Normal ? this.RestoreBounds : this.DesktopBounds;
+                Rectangle bounds = this.WindowState != FormWindowState.Normal ? this.RestoreBounds : this.DesktopBounds;
                 formState.formLocation = bounds.Location;
                 formState.formSize = bounds.Size;
             }
@@ -362,11 +360,16 @@ namespace EncRotator
                     formState.coils += rotator.engineStatus;
                     writeConfig();
 
-                    this.Invoke((MethodInvoker)delegate
+                    Invoke((MethodInvoker)delegate
                     {
                         setOvercoilCaption();
                     });
                 }
+                if (rotatorIdx == ROTATOR_H)
+                    Invoke((MethodInvoker)delegate
+                    {
+                        pMap.Invalidate();
+                    });
 
                 //set current angle
                 anglesChange[rotatorIdx] += e.angle - currentAngles[rotatorIdx];
@@ -481,7 +484,7 @@ namespace EncRotator
             return angle;
         }
 
-        private void pMap_MouseClick(object sender, MouseEventArgs e)
+        private async void pMap_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
@@ -492,7 +495,7 @@ namespace EncRotator
                         setCurrentMap(0);
             }
             else if (rotators[ROTATOR_H].connected && angleValuesSet(ROTATOR_H) && currentAngles[ROTATOR_H] != -1)            
-                rotateToAngle(ROTATOR_H, mouse2Angle(e.X, e.Y));            
+                await rotateToAngle(ROTATOR_H, mouse2Angle(e.X, e.Y));            
         }
 
 
@@ -503,7 +506,7 @@ namespace EncRotator
             camWindow?.kill();
         }
 
-        private void timer_Tick(object sender, EventArgs e)
+        private async void timer_Tick(object sender, EventArgs e)
         {
             for (int rotatorIdx = 0; rotatorIdx < 2; rotatorIdx++)
             {
@@ -526,6 +529,8 @@ namespace EncRotator
                     rotatorPanels[rotatorIdx].blink(0);
                 }
             }
+            if (miFollow.Checked)
+                await followMoon();
         }
 
         private void miMapAdd_Click(object sender, EventArgs e)
@@ -586,12 +591,6 @@ namespace EncRotator
             Height = 800;
         }
 
-        private void bStop_Click(object sender, EventArgs e)
-        {
-            foreach (RotatorEngine rotator in rotators)
-                _ = rotator.on(0);
-        }
-
 
         private void miMapRemove_Click(object sender, EventArgs e)
         {
@@ -624,6 +623,7 @@ namespace EncRotator
             loaded = true;
             if (formState.showCam)
                 showCam();
+            updateMenu();
 
          //   AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
          //   AutoUpdater.Start("http://tnxqso.com/static/files/apps/MoonRotator/update.xml");
@@ -742,10 +742,20 @@ namespace EncRotator
             return rotateKeys[ROTATOR_H].ContainsKey(keys) ? ROTATOR_H : ROTATOR_V;
         }
 
-        private void bStop_Click_1(object sender, EventArgs e)
+        private void stopEngines()
         {
             foreach (RotatorEngine rotator in rotators)
                 _ = rotator.on(0);
+        }
+
+        private void bStop_Click(object sender, EventArgs e)
+        {
+            if (miFollow.Checked)
+            {
+                miFollow.Checked = false;
+                updateFollow();
+            } else
+                stopEngines();
         }
 
         private void miSetValueClick(object sender, EventArgs e)
@@ -861,6 +871,106 @@ namespace EncRotator
                 }
             }
         }
+
+        private void miSetCoordinates_Click(object sender, EventArgs e)
+        {
+            string coo = formState.lat != 256 && formState.lng != 256 ? $"{formState.lat}, {formState.lng}" : "";
+            FInputBox cooInputBox = new FInputBox("Широта, долгота", coo);
+            if (cooInputBox.ShowDialog() == DialogResult.OK && cooInputBox.value != coo)
+            {
+                bool success = false;
+                coo = cooInputBox.value;
+                if (string.IsNullOrEmpty(coo))
+                {
+                    formState.lat = 256;
+                    formState.lng = 256;
+                }
+                else
+                {
+                    string[] parts = coo.Split(new char[] { ' ', ',', ';' }).Where(item => !string.IsNullOrEmpty(item)).ToArray();
+                    if (parts.Length == 2)
+                    {
+                        try
+                        {
+                            double lat = Convert.ToDouble(parts[0], CultureInfo.InvariantCulture);
+                            double lng = Convert.ToDouble(parts[1], CultureInfo.InvariantCulture);
+                            if (Math.Abs(lat) <= 180 && Math.Abs(lng) <= 180)
+                            {
+                                formState.lat = lat;
+                                formState.lng = lng;
+                                success = true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error(ex, "coordinates parse exception");
+                        }
+                    }
+                }
+                if (success)
+                {
+                    if (formState.follow && formState.lat == 256)
+                    {
+                        formState.follow = false;
+                    }
+                    writeConfig();
+                }
+                else
+                {
+                    showMessage($"Некорректные координаты.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private async Task followMoon()
+        {
+            MoonPosition moonPosition = MoonCalc.GetMoonPosition(DateTime.UtcNow, formState.lat, formState.lng);
+            if (moonPosition.Altitude > 0)
+            {
+                double azimuth = moonPosition.Azimuth >= 0 ? moonPosition.Azimuth : 360 + moonPosition.Azimuth;
+                await rotateToAngle(ROTATOR_V, RotatorEngine.degreeToEncoder(moonPosition.Altitude));
+                await rotateToAngle(ROTATOR_H, RotatorEngine.degreeToEncoder(azimuth));
+                Invoke((MethodInvoker)delegate
+                {
+                    rotatorPanelH.setTargetAngleDegrees(azimuth);
+                    rotatorPanelV.setTargetAngleDegrees(moonPosition.Altitude);
+                });
+            } else
+            {
+                Invoke((MethodInvoker)delegate
+                {
+                    miFollow.Checked = false;
+                    updateFollow();
+                    showMessage("Луна ниже горизонта!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                });
+            }
+        }
+
+        private void updateFollow()
+        {
+            Invoke((MethodInvoker) async delegate
+            {
+                string toolTipText = miFollow.Checked ? "Режим автоматического следования за Луной" : "";
+                pMap.Enabled = !miFollow.Checked;
+                foreach (RotatorPanel panel in rotatorPanels.Values)
+                    panel.Enabled = !miFollow.Checked;
+                if (miFollow.Checked)
+                {
+                    toolTip.SetToolTip(bStop, "Режим автоматического следования за Луной");
+                    await followMoon();
+                }
+                else
+                {
+                    toolTip.RemoveAll();
+                    stopEngines();
+                }
+            });
+        }
+
+        private void miFollow_Click(object sender, EventArgs e)
+        {
+            updateFollow();
+        }
     }
 
 
@@ -898,6 +1008,8 @@ namespace EncRotator
         public int northAngle = -1;
         public int zenithAngle = -1;
         public int horizonAngle = -1;
+        public double lat = 256;
+        public double lng = 256;
     }
 
 

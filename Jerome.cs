@@ -22,6 +22,11 @@ namespace Jerome
         public int state;
     }
 
+    public class ConnectEventArgs : EventArgs
+    {
+        public bool success;
+    }
+
     public class JeromeController : IDisposable
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
@@ -45,23 +50,28 @@ namespace Jerome
         private object cmdQueeLock = new object();
         private List<CmdEntry> cmdQuee = new List<CmdEntry>();
 
-        private const int TIMEOUT = 10000;
+        private const int TIMEOUT = 1000;
         private static Regex rEVT = new Regex(@"#EVT,IN,\d+,(\d+),(\d)");
         private Timer replyTimer;
+        private bool isReplyTimeout;
 
         // ManualResetEvent instances signal completion.
 
         public event EventHandler<DisconnectEventArgs> onDisconnected;
+        public event EventHandler<ConnectEventArgs> onConnected;
         public event EventHandler<LineStateChangedEventArgs> lineStateChanged;
+       
 
         public JeromeConnectionParams connectionParams;
         private TcpConnection _connection;
+        public bool resetControllerOnDisconnect { get; set; }
+        public int reconnectInterval { get; set; }
 
         public bool connected
         {
             get
             {
-                return _connection != null && _connection.connected;
+                return _connection?.connected ?? false;
             }
         }
 
@@ -144,40 +154,88 @@ namespace Jerome
         }
 
 
-        public async Task<bool> connect()
+        public async Task connect()
         {
             bool result = false;
             _connection = new TcpConnection(connectionParams.host, connectionParams.port);            
             if (await _connection.connect())
             {
                 _connection.lineReceived += lineReceived;
+                //_connection.disconnected += _disconnected;
                 await sendCommand("PSW,SET," + connectionParams.password);
                 await sendCommand("EVT,ON");
-                result = true;
                 logger.Debug($"{connectionParams.name} connected");
-            } else
+                result = true;
+            }
+            else
             {
                 logger.Debug($"{connectionParams.name} connection failed");
             }
-            return result;
+            _ = Task.Run(() => {
+                try
+                {
+                    onConnected?.Invoke(this, new ConnectEventArgs() { success = result });
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"{connectionParams.name} connect event handler exception");
+                }
+            });
         }
 
-        public void disconnect()
+        private void _disconnected(object sender, DisconnectEventArgs e)
         {
+            bool requested = !isReplyTimeout && e.requested;
+            isReplyTimeout = false;
+            onDisconnected?.Invoke(this, new DisconnectEventArgs() { requested = requested });
+            if (resetControllerOnDisconnect)
+                Task.Run(async () => {
+                    try
+                    {
+                        await connectionParams.reset();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, $"{connectionParams.name} reset controller exception");
+                    }
+                });
+            if (reconnectInterval != 0 && !requested)
+            {
+                Task.Run(async () => {
+                    try
+                    {
+                        await Task.Delay(reconnectInterval);
+                        await connect();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, $"{connectionParams.name} reconnect exception");
+                    }
+                });
+            }
+        }
+
+        public void disconnect(bool requested = true)
+        {
+            replyTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             currentCmd = null;
             cmdQuee.Clear();
-            _disconnect(true);
+            if (_connection != null)
+            {
+                _connection.disconnected -= _disconnected;
+                try
+                {
+                    _connection.Close();
+                    logger.Debug($"{connectionParams.name} connection closed");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"{connectionParams.name} connection close exception\n");
+                }
+                _connection = null;
+                _disconnected(this, new DisconnectEventArgs() { requested = requested });
+            }
         }
-
-        private void _disconnect(bool requested)
-        {
-            logger.Debug($"{connectionParams.name} disconnect (requested: {requested})");
-            if (connected)
-                _connection.Close();
-            _connection = null;
-            onDisconnected?.Invoke(this, new DisconnectEventArgs() { requested = requested });
-        }
-
 
         private void lineReceived(object sender, LineReceivedEventArgs e )
         {
@@ -235,8 +293,12 @@ namespace Jerome
 
         private void replyTimeout()
         {
-            logger.Debug($"{connectionParams.name} reply timeout");
-            _disconnect(false);
+            if (connected)
+            {
+                logger.Debug($"{connectionParams.name} reply timeout");
+                isReplyTimeout = true;
+                disconnect();
+            }
         }
 
         public void Dispose()
