@@ -353,6 +353,7 @@ namespace EncRotator
             int rotatorIdx = getRotatorIndex(rotator);
             if (e.angle != currentAngles[rotatorIdx])
             {
+                logger.Debug($"{formState.connections[rotatorIdx].name} angle {e.angle}");
                 //warn if horizontal overcoil
                 if (rotatorIdx == ROTATOR_H && rotator.engineStatus != 0 && formState.northAngle != -1 && currentAngles[rotatorIdx] != -1 &&
                     Math.Sign(aD(formState.northAngle, currentAngles[rotatorIdx])) != Math.Sign(aD(formState.northAngle, e.angle)))
@@ -400,6 +401,12 @@ namespace EncRotator
                 rotatorPanels[rotatorIdx].displayAngle = displayAngle;
 
             }
+        }
+
+
+        private async Task rotatorsParallelHelper(Func<RotatorEngine, Task> action)
+        {
+            await Task.WhenAll(rotators.Select(rotator => Task.Run(async () => await action(rotator))));
         }
 
         private void loadMap(string fMap)
@@ -549,10 +556,9 @@ namespace EncRotator
         }
 
 
-        private void disconnect()
+        private async void disconnect()
         {
-            foreach (RotatorEngine rotator in rotators)
-                _ = rotator.disconnect();
+            await rotatorsParallelHelper(async rotator => await rotator.disconnect());
         }
 
         public bool editConnection(ConnectionSettings conn)
@@ -695,7 +701,7 @@ namespace EncRotator
                 if (rotateKeyDown == -1 && !waitCursor)
                 {
                     int rotatorIdx = getRotatorIndex(keyData);
-                    _ = rotators[rotatorIdx].on(rotateKeys[rotatorIdx][keyData]);
+                    Task.Run(async () => await rotators[rotatorIdx].on(rotateKeys[rotatorIdx][keyData]) );
                     rotateKeyDown = rotatorIdx;
                 }
                 return true;
@@ -719,22 +725,31 @@ namespace EncRotator
         {
             if (m.Msg == WM_KEYUP && rotateKeyDown != -1)
             {
-                _ = rotators[rotateKeyDown].on(0);
+                Task.Run(async () => await rotators[rotateKeyDown].on(0) );
                 rotateKeyDown = -1;
             }
             return false;
         }
 
-        private void miConnect_Click(object sender, EventArgs e)
+        private async void miConnect_Click(object sender, EventArgs e)
         {
-            connect();
+            await connect();
         }
 
-        private void connect()
+        private async Task connect()
         {
-            foreach (RotatorEngine rotator in rotators)
+            /*   await Task.WhenAll(
+                   rotators.Select(rotator => Task.Run(async () =>
+                   {
+                       if (!rotator.connected)
+                           await rotator.connect();
+                   })));
+            */
+            await rotatorsParallelHelper(async rotator =>
+            {
                 if (!rotator.connected)
-                    _ = rotator.connect();
+                    await rotator.connect();
+            });
         }
 
         private int getRotatorIndex(Keys keys)
@@ -742,10 +757,9 @@ namespace EncRotator
             return rotateKeys[ROTATOR_H].ContainsKey(keys) ? ROTATOR_H : ROTATOR_V;
         }
 
-        private void stopEngines()
+        private async void stopEngines()
         {
-            foreach (RotatorEngine rotator in rotators)
-                _ = rotator.on(0);
+            await rotatorsParallelHelper(async rotator => await rotator.on(0));
         }
 
         private void bStop_Click(object sender, EventArgs e)
