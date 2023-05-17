@@ -50,7 +50,7 @@ namespace Jerome
         private object cmdQueeLock = new object();
         private List<CmdEntry> cmdQuee = new List<CmdEntry>();
 
-        private const int TIMEOUT = 1000;
+        private const int TIMEOUT = 3000;
         private static Regex rEVT = new Regex(@"#EVT,IN,\d+,(\d+),(\d)");
         private Timer replyTimer;
         private bool isReplyTimeout;

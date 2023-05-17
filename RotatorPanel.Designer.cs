@@ -34,6 +34,7 @@
             this.bRotateCW = new System.Windows.Forms.Button();
             this.bRotateCCW = new System.Windows.Forms.Button();
             this.lWarning = new System.Windows.Forms.Label();
+            this.lTargetAngle = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.nTargetAngle)).BeginInit();
             this.SuspendLayout();
             // 
@@ -76,11 +77,11 @@
             this.bRotateToTarget.UseVisualStyleBackColor = true;
             this.bRotateToTarget.Click += new System.EventHandler(this._rotateToTargetClick);
             // 
-            // bRotateCCW
+            // bRotateCW
             // 
             this.bRotateCW.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bRotateCW.Location = new System.Drawing.Point(3, 109);
-            this.bRotateCW.Name = "bRotateCCW";
+            this.bRotateCW.Name = "bRotateCW";
             this.bRotateCW.Size = new System.Drawing.Size(60, 60);
             this.bRotateCW.TabIndex = 3;
             this.bRotateCW.UseVisualStyleBackColor = true;
@@ -88,11 +89,11 @@
             this.bRotateCW.MouseLeave += new System.EventHandler(this._rotateButtonMouseLeave);
             this.bRotateCW.MouseUp += new System.Windows.Forms.MouseEventHandler(this._rotateButtonMouseUp);
             // 
-            // bRotateCW
+            // bRotateCCW
             // 
             this.bRotateCCW.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bRotateCCW.Location = new System.Drawing.Point(66, 109);
-            this.bRotateCCW.Name = "bRotateCW";
+            this.bRotateCCW.Name = "bRotateCCW";
             this.bRotateCCW.Size = new System.Drawing.Size(60, 60);
             this.bRotateCCW.TabIndex = 4;
             this.bRotateCCW.UseVisualStyleBackColor = true;
@@ -112,10 +113,22 @@
             this.lWarning.Text = "Нет связи";
             this.lWarning.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // lTargetAngle
+            // 
+            this.lTargetAngle.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.lTargetAngle.Location = new System.Drawing.Point(14, 34);
+            this.lTargetAngle.Name = "lTargetAngle";
+            this.lTargetAngle.Size = new System.Drawing.Size(100, 37);
+            this.lTargetAngle.TabIndex = 6;
+            this.lTargetAngle.Text = "359.9";
+            this.lTargetAngle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lTargetAngle.Visible = false;
+            // 
             // RotatorPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.lTargetAngle);
             this.Controls.Add(this.lWarning);
             this.Controls.Add(this.bRotateCCW);
             this.Controls.Add(this.bRotateCW);
@@ -137,5 +150,6 @@
         private System.Windows.Forms.Button bRotateCW;
         private System.Windows.Forms.Button bRotateCCW;
         private System.Windows.Forms.Label lWarning;
+        private System.Windows.Forms.Label lTargetAngle;
     }
 }

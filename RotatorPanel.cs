@@ -35,6 +35,22 @@ namespace EncRotator
                 updateRotateButtonsImages();
             }
         }
+
+        int _mode = fMain.MODE_AZ;
+        internal int mode
+        {
+            get { return _mode; }
+            set
+            {
+                _mode = value;
+                Invoke((MethodInvoker)delegate
+                {
+                    nTargetAngle.Visible = _mode == fMain.MODE_AZ;
+                    bRotateToTarget.Visible = _mode == fMain.MODE_AZ;
+                    lTargetAngle.Visible = _mode == fMain.MODE_EME;
+                });
+            }
+        }
         internal EventHandler<RotateToTargetClickEventArgs> rotateToTargetClick;
         internal EventHandler<RotateButtonMouseDownEventArgs> rotateButtonMouseDown;
         internal EventHandler<RotatorPanelEventArgs> rotateButtonMouseUp;
@@ -54,7 +70,12 @@ namespace EncRotator
         internal int targetAngle
         {
             get { return RotatorEngine.degreeToEncoder((double)nTargetAngle.Value); }
-            set { nTargetAngle.Value = (decimal)angleToDegrees(value); }
+            set 
+            { 
+                decimal dValue = (decimal)angleToDegrees(value);
+                nTargetAngle.Value = dValue;
+                lTargetAngle.Text = dValue.ToString("0.0");
+            }
         }
 
         internal void setTargetAngleDegrees(double value)

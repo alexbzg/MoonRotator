@@ -32,6 +32,10 @@ namespace EncRotator
 
         internal const int ROTATOR_H = 0;
         internal const int ROTATOR_V = 1;
+
+        internal const int MODE_AZ = 0;
+        internal const int MODE_EME = 1;
+
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
         internal bool editConnectionGroup(ConnectionSettings connectionSettings)
@@ -179,18 +183,16 @@ namespace EncRotator
             {
                 showMessage($"Подключение не удалось: {getConnectionByRotator(rotator).name}", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            updateMenu();
+            updateUI();
         }
 
-        private void updateMenu()
+        private void updateUI()
         {
             Invoke((MethodInvoker) delegate
             {
                 int connected = rotators.Count(item => item.connected);
                 miConnect.Visible = connected != 2;
-                miFollow.Visible = connected == 2 && formState.lat != 256;
-                if (miFollow.Checked && connected != 2)
-                    updateFollow();
+                cbFollow.Enabled = (connected == 2 && formState.lat != 256) || cbFollow.Checked;
                 miDisconnect.Visible = connected != 0;
                 miSetAzimuth.Visible = rotators[ROTATOR_H].connected;
                 miSetHorizon.Visible = rotators[ROTATOR_V].connected;
@@ -231,15 +233,15 @@ namespace EncRotator
                 rotatorPanels[rotatorIdx].rotatorConnected = false;
                 currentAngles[rotatorIdx] = -1;
                 anglesChange[rotatorIdx] = 0;
-                updateMenu();
+                updateUI();
                 Invoke((MethodInvoker)delegate
                 {
                     timer.Enabled = rotators[1 - rotatorIdx].connected;
                     if (rotatorIdx == ROTATOR_H)
                         pMap.Invalidate();
-                    if (miFollow.Checked)
+                    if (cbFollow.Checked && e.requested)
                     {
-                        miFollow.Checked = false;
+                        cbFollow.Checked = false;
                         updateFollow();
                     }
                 });
@@ -298,7 +300,7 @@ namespace EncRotator
             targetAngles[rotatorIdx] = absoluteAngle(rotatorIdx, angle);
             if (rotatorIdx == ROTATOR_H)
                 pMap.Invalidate();
-            if (targetAngles[rotatorIdx] != currentAngles[rotatorIdx])
+            if (Math.Abs(aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx])) > 1)
             {
                 int d = aD(targetAngles[rotatorIdx], currentAngles[rotatorIdx]);
                 int dir = Math.Sign(d);
@@ -309,7 +311,8 @@ namespace EncRotator
                     {
                         dir = -dir;
                     }
-                }
+                } else 
+                    dir = -dir;
                 await rotators[rotatorIdx].on(dir);
             }
         }
@@ -536,7 +539,7 @@ namespace EncRotator
                     rotatorPanels[rotatorIdx].blink(0);
                 }
             }
-            if (miFollow.Checked)
+            if (miCam.Checked)
                 await followMoon();
         }
 
@@ -624,12 +627,12 @@ namespace EncRotator
             if (formState.formLocation != null && formState.formSize != null)
                 this.DesktopBounds =
                     new Rectangle((Point)formState.formLocation, (Size)formState.formSize);
-            cbCam.Enabled = !string.IsNullOrEmpty(formState.camURL);
-            cbCam.Checked = formState.showCam;
+            cbFollow.Enabled = !string.IsNullOrEmpty(formState.camURL);
+            cbFollow.Checked = formState.showCam;
             loaded = true;
             if (formState.showCam)
                 showCam();
-            updateMenu();
+            updateUI();
 
          //   AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
          //   AutoUpdater.Start("http://tnxqso.com/static/files/apps/MoonRotator/update.xml");
@@ -651,7 +654,7 @@ namespace EncRotator
                 catch (TimeoutException)
                 {
                     showMessage("Не удалось подключиться к камере. Проверьте состояние камеры и настройки подключения.", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    cbCam.Checked = false;
+                    cbFollow.Checked = false;
                     formState.showCam = false;
                     writeConfig();
                 }
@@ -669,7 +672,7 @@ namespace EncRotator
         private void camWindowClose(object sender, EventArgs e)
         {
             formState.showCam = false;
-            cbCam.Checked = false;
+            cbFollow.Checked = false;
             writeConfig();
             unsubscribeCamEvents();
             camWindow?.Dispose();
@@ -738,18 +741,13 @@ namespace EncRotator
 
         private async Task connect()
         {
-            /*   await Task.WhenAll(
-                   rotators.Select(rotator => Task.Run(async () =>
-                   {
-                       if (!rotator.connected)
-                           await rotator.connect();
-                   })));
-            */
             await rotatorsParallelHelper(async rotator =>
             {
                 if (!rotator.connected)
                     await rotator.connect();
             });
+            if (miCam.Checked)
+                showCam();
         }
 
         private int getRotatorIndex(Keys keys)
@@ -764,9 +762,9 @@ namespace EncRotator
 
         private void bStop_Click(object sender, EventArgs e)
         {
-            if (miFollow.Checked)
+            if (miCam.Checked)
             {
-                miFollow.Checked = false;
+                miCam.Checked = false;
                 updateFollow();
             } else
                 stopEngines();
@@ -802,27 +800,30 @@ namespace EncRotator
                 }
             } else
             {
-                int prevValue;
-                if (mi == miSetHorizon)
+                if (showMessage($"Антенна действительно находится в положении: {(mi == miSetHorizon ? "горизонт" : "зенит")}?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
-                    prevValue = formState.horizonAngle;
-                    formState.horizonAngle = currentAngles[ROTATOR_V];
-                }
-                else
-                {
-                    prevValue = formState.zenithAngle;
-                    formState.zenithAngle = currentAngles[ROTATOR_V];
-                }
-                if (formState.zenithAngle == formState.horizonAngle)
-                {
-                    showMessage("Горизонт не может совпадать с зенитом.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    int prevValue;
                     if (mi == miSetHorizon)
-                        formState.horizonAngle = prevValue;
-                    else 
-                        formState.zenithAngle = prevValue;
-                    return;
+                    {
+                        prevValue = formState.horizonAngle;
+                        formState.horizonAngle = currentAngles[ROTATOR_V];
+                    }
+                    else
+                    {
+                        prevValue = formState.zenithAngle;
+                        formState.zenithAngle = currentAngles[ROTATOR_V];
+                    }
+                    if (formState.zenithAngle == formState.horizonAngle)
+                    {
+                        showMessage("Горизонт не может совпадать с зенитом.", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        if (mi == miSetHorizon)
+                            formState.horizonAngle = prevValue;
+                        else
+                            formState.zenithAngle = prevValue;
+                        return;
+                    }
+                    rotatorPanelV.displayAngle = relativeAngle(ROTATOR_V, currentAngles[ROTATOR_V]);
                 }
-                rotatorPanelV.displayAngle = relativeAngle(ROTATOR_V, currentAngles[ROTATOR_V]);
             }
             writeConfig();
         }
@@ -839,7 +840,7 @@ namespace EncRotator
             {
                 formState.camURL = urlInputBox.value;
                 writeConfig();
-                cbCam.Enabled = !string.IsNullOrEmpty(formState.camURL);
+                cbFollow.Enabled = !string.IsNullOrEmpty(formState.camURL);
                 if (camWindow != null)
                 {
                     closeCam();
@@ -856,14 +857,9 @@ namespace EncRotator
             camWindow = null;
         }
 
-        private void cbCam_CheckedChanged(object sender, EventArgs e)
+        private void cbFollow_CheckedChanged(object sender, EventArgs e)
         {
-            if (cbCam.Checked)
-                showCam();
-            else
-                closeCam();
-            formState.showCam = cbCam.Checked;
-            writeConfig();
+            updateFollow();
         }
 
         private async void miReset_Click(object sender, EventArgs e)
@@ -923,12 +919,12 @@ namespace EncRotator
                 }
                 if (success)
                 {
-                    if (miFollow.Checked && formState.lat == 256)
+                    if (miCam.Checked && formState.lat == 256)
                     {
-                        miFollow.Checked = false;
+                        miCam.Checked = false;
                         updateFollow();
                     }
-                    updateMenu();
+                    updateUI();
                     writeConfig();
                 }
                 else
@@ -958,7 +954,7 @@ namespace EncRotator
             {
                 Invoke((MethodInvoker)delegate
                 {
-                    miFollow.Checked = false;
+                    cbFollow.Checked = false;
                     updateFollow();
                     showMessage("Луна ниже горизонта!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 });
@@ -969,26 +965,42 @@ namespace EncRotator
         {
             Invoke((MethodInvoker) async delegate
             {
-                string toolTipText = miFollow.Checked ? "Режим автоматического следования за Луной" : "";
-                pMap.Enabled = !miFollow.Checked;
+                cbFollow.Text = cbFollow.Checked ? "EME" : "Az";
+                lTarget.Text = cbFollow.Checked ? "Луна" : "Цель движения";
+                pMap.Enabled = !cbFollow.Checked;
                 foreach (RotatorPanel panel in rotatorPanels.Values)
-                    panel.Enabled = !miFollow.Checked;
-                if (miFollow.Checked)
                 {
-                    toolTip.SetToolTip(bStop, "Режим автоматического следования за Луной");
+                    panel.Enabled = !cbFollow.Checked;
+                    panel.mode = !cbFollow.Checked ? MODE_AZ : MODE_EME;
+                }
+                if (cbFollow.Checked)
+                {
                     await followMoon();
                 }
                 else
                 {
-                    toolTip.RemoveAll();
                     stopEngines();
+                    cbFollow.Enabled = rotators.All(rotator => rotator.connected) && formState.zenithAngle != 256;
                 }
             });
         }
 
-        private void miFollow_Click(object sender, EventArgs e)
+        private void miCam_Click(object sender, EventArgs e)
         {
-            updateFollow();
+            if (miCam.Checked)
+                showCam();
+            else
+                closeCam();
+            formState.showCam = miCam.Checked;
+            writeConfig();
+        }
+
+        private void bMenu_Click(object sender, EventArgs e)
+        {
+            if (contextMenu.Visible)
+                contextMenu.Hide();
+            else
+                contextMenu.Show(bMenu, new Point(0, bMenu.Height));
         }
     }
 
