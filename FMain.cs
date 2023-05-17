@@ -628,8 +628,7 @@ namespace EncRotator
             if (formState.formLocation != null && formState.formSize != null)
                 this.DesktopBounds =
                     new Rectangle((Point)formState.formLocation, (Size)formState.formSize);
-            cbFollow.Enabled = !string.IsNullOrEmpty(formState.camURL);
-            cbFollow.Checked = formState.showCam;
+            miCam.Enabled = !string.IsNullOrEmpty(formState.camURL);
             loaded = true;
             if (formState.showCam) {
                 miCam.Checked = true;
