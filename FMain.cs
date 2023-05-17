@@ -120,6 +120,7 @@ namespace EncRotator
                     setCurrentMap(formState.currentMap);
                 else if (formState.maps.Count > 0)
                     setCurrentMap(0);
+
             }
 
             for (int idx = 0; idx < 2; idx++)
@@ -539,7 +540,7 @@ namespace EncRotator
                     rotatorPanels[rotatorIdx].blink(0);
                 }
             }
-            if (miCam.Checked)
+            if (cbFollow.Checked)
                 await followMoon();
         }
 
@@ -630,8 +631,10 @@ namespace EncRotator
             cbFollow.Enabled = !string.IsNullOrEmpty(formState.camURL);
             cbFollow.Checked = formState.showCam;
             loaded = true;
-            if (formState.showCam)
+            if (formState.showCam) {
+                miCam.Checked = true;
                 showCam();
+            }
             updateUI();
 
          //   AutoUpdater.CurrentCulture = CultureInfo.CreateSpecificCulture("ru-RU");
@@ -746,8 +749,6 @@ namespace EncRotator
                 if (!rotator.connected)
                     await rotator.connect();
             });
-            if (miCam.Checked)
-                showCam();
         }
 
         private int getRotatorIndex(Keys keys)
@@ -762,9 +763,9 @@ namespace EncRotator
 
         private void bStop_Click(object sender, EventArgs e)
         {
-            if (miCam.Checked)
+            if (cbFollow.Checked)
             {
-                miCam.Checked = false;
+                cbFollow.Checked = false;
                 updateFollow();
             } else
                 stopEngines();
@@ -919,9 +920,9 @@ namespace EncRotator
                 }
                 if (success)
                 {
-                    if (miCam.Checked && formState.lat == 256)
+                    if (cbFollow.Checked && formState.lat == 256)
                     {
-                        miCam.Checked = false;
+                        cbFollow.Checked = false;
                         updateFollow();
                     }
                     updateUI();
