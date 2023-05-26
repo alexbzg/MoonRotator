@@ -54,6 +54,7 @@
             this.lMode = new System.Windows.Forms.Label();
             this.contextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.bMenu = new System.Windows.Forms.Button();
+            this.miShowMap = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pMap)).BeginInit();
             this.contextMenu.SuspendLayout();
             this.SuspendLayout();
@@ -307,9 +308,10 @@
             this.miSetValues,
             this.miModuleSettings,
             this.miReset,
-            this.miCam});
+            this.miCam,
+            this.miShowMap});
             this.contextMenu.Name = "contextMenu";
-            this.contextMenu.Size = new System.Drawing.Size(271, 244);
+            this.contextMenu.Size = new System.Drawing.Size(271, 296);
             // 
             // bMenu
             // 
@@ -321,6 +323,16 @@
             this.bMenu.TabIndex = 30;
             this.bMenu.UseVisualStyleBackColor = true;
             this.bMenu.Click += new System.EventHandler(this.bMenu_Click);
+            // 
+            // miShowMap
+            // 
+            this.miShowMap.Checked = true;
+            this.miShowMap.CheckOnClick = true;
+            this.miShowMap.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.miShowMap.Name = "miShowMap";
+            this.miShowMap.Size = new System.Drawing.Size(270, 30);
+            this.miShowMap.Text = "Показать карту";
+            this.miShowMap.Click += new System.EventHandler(this.miShowMap_Click);
             // 
             // fMain
             // 
@@ -386,6 +398,7 @@
         private System.Windows.Forms.Label lMode;
         private System.Windows.Forms.ContextMenuStrip contextMenu;
         private System.Windows.Forms.Button bMenu;
+        private System.Windows.Forms.ToolStripMenuItem miShowMap;
     }
 }
 

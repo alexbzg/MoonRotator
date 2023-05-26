@@ -103,6 +103,10 @@
     <Reference Include="AutoUpdater.NET">
       <HintPath>..\..\AutoUpdater.NET 1.3.1\Unsigned\AutoUpdater.NET.dll</HintPath>
     </Reference>
+    <Reference Include="CoordinateSharp, Version=2.17.1.1, Culture=neutral, PublicKeyToken=f45e02df057b7725, processorArchitecture=MSIL">
+      <HintPath>packages\CoordinateSharp.2.18.1.1\lib\net40\CoordinateSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
     </Reference>

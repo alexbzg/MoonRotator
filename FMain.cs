@@ -7,15 +7,12 @@ using System.IO;
 using System.Xml.Serialization;
 using Jerome;
 using TcpConnectionNS;
-using System.Threading;
 using FFMpegUtils;
 using InputBox;
 using System.Globalization;
 using System.Threading.Tasks;
 using NLog;
-using SunCalcNet;
-using NLog.Fluent;
-using SunCalcNet.Model;
+using CoordinateSharp;
 
 namespace EncRotator
 {
@@ -425,18 +422,21 @@ namespace EncRotator
 
         private void adjustToMap()
         {
-            if (WindowState == FormWindowState.Maximized)
+            if (pMap.Visible)
             {
-                int tmpHeight = Height;
-                WindowState = FormWindowState.Normal;
-                Height = tmpHeight;
-                Top = 0;
-                Left = 0;
-            }
-            if (Math.Abs(mapRatio - (double)pMap.Width / (double)pMap.Height) > 0.01)
-            {
-                Width = (int)(mapRatio * pMap.Height) + Width - pMap.Width;
-                //pMap.Refresh();
+                if (WindowState == FormWindowState.Maximized)
+                {
+                    int tmpHeight = Height;
+                    WindowState = FormWindowState.Normal;
+                    Height = tmpHeight;
+                    Top = 0;
+                    Left = 0;
+                }
+                if (Math.Abs(mapRatio - (double)pMap.Width / (double)pMap.Height) > 0.01)
+                {
+                    Width = (int)(mapRatio * pMap.Height) + Width - pMap.Width;
+                    //pMap.Refresh();
+                }
             }
         }
 
@@ -625,6 +625,12 @@ namespace EncRotator
 
         private void fMain_Load(object sender, EventArgs e)
         {
+            miShowMap.Checked = formState.showMap;
+            if (!miShowMap.Checked)
+            {
+                pMap.Visible = false;
+                pMap.Width = ClientSize.Width;
+            }
             if (formState.formLocation != null && formState.formSize != null)
                 this.DesktopBounds =
                     new Rectangle((Point)formState.formLocation, (Size)formState.formSize);
@@ -936,13 +942,13 @@ namespace EncRotator
 
         private async Task followMoon()
         {
-            MoonPosition moonPosition = MoonCalc.GetMoonPosition(DateTime.UtcNow, formState.lat, formState.lng);
-            if (moonPosition.Altitude > 0)
+            Coordinate coord = new Coordinate(formState.lat, formState.lng, DateTime.UtcNow);
+            if (coord.CelestialInfo.IsMoonUp)
             {
-                int azimuth = RotatorEngine.radToEncoder(moonPosition.Azimuth + Math.PI);
+                int azimuth = RotatorEngine.degreeToEncoder(coord.CelestialInfo.MoonAzimuth);
                 if (azimuth < 0)
                     azimuth += 1024;
-                int elevation = RotatorEngine.radToEncoder(moonPosition.Altitude);
+                int elevation = RotatorEngine.degreeToEncoder(coord.CelestialInfo.MoonAltitude);
                 await rotateToAngle(ROTATOR_V, elevation);
                 await rotateToAngle(ROTATOR_H, azimuth);
                 Invoke((MethodInvoker)delegate
@@ -1002,6 +1008,21 @@ namespace EncRotator
             else
                 contextMenu.Show(bMenu, new Point(0, bMenu.Height));
         }
+
+        private void miShowMap_Click(object sender, EventArgs e)
+        {
+            pMap.Visible = miShowMap.Checked;
+            if (miShowMap.Checked)
+            {
+                Height += (int)(pMap.Width / mapRatio);
+            }
+            else
+            {
+                Height -= pMap.Height;
+            }
+            formState.showMap = miShowMap.Checked;
+            writeConfig();
+        }
     }
 
 
@@ -1028,6 +1049,7 @@ namespace EncRotator
         public int currentMap = -1;
         public System.Drawing.Point? formLocation = null;
         public System.Drawing.Size? formSize = null;
+        public bool showMap = true;
         public RECT camWindowPos = new RECT();
         public bool showCam = false;
         public string camURL = "rtsp://admin:admin123@192.168.1.10:554/mode=real&idc=1&ids=2";
